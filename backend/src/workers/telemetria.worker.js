@@ -2,6 +2,7 @@ const { Worker } = require('bullmq');
 const { connection } = require('../services/queue');
 const mongoose = require('mongoose');
 const { pool } = require('../config/postgres');
+const { getIO } = require('../services/socket');
 
 
 const Telemetria = mongoose.models.Telemetria || mongoose.model('Telemetria',
@@ -105,6 +106,15 @@ const worker = new Worker('telemetria', async (job) => {
     });
     await lectura.save();
 
+    // Emite la lectura nueva a todos los clientes del dashboard cuando este
+    const io = getIO();
+    io.emit('telemetria:live', {
+        nodo_id,
+        mac,
+        timestamp: lectura.timestamp,
+        valores: lectura.valores
+    });
+
     console.log(`Telemetria guardada — MAC: ${mac} | pH: ${ph} | Temp: ${temperatura}`);
 
     // Valida la lectura contra los umbrales NOM-127
@@ -118,6 +128,12 @@ const worker = new Worker('telemetria', async (job) => {
             const alerta = await registrarAlerta(nodo_id, anomalia);
             if (alerta) {
                 console.warn(`Alerta registrada — ${anomalia.parametro}: ${anomalia.valor_leido} (rango: ${anomalia.valor_min}-${anomalia.valor_max})`);
+                const io = getIO();
+                io.emit('alertas:nueva', {
+                    nodo_id,
+                    mac,
+                    alerta
+                });
             }
         }
     }

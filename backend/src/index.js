@@ -10,6 +10,8 @@ const runMigrations = require('./config/migrations');
 
 const iniciarMQTT = require('./services/mqttclient');
 
+const { setIO } = require('./services/socket');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -42,6 +44,8 @@ async function start() {
     await connectMongo();
     await connectPostgres();
     await runMigrations();
+
+    setIO(io);
 
     require('./workers/telemetria.worker');
     iniciarMQTT(io);
