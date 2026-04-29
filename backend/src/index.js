@@ -8,6 +8,7 @@ const connectMongo = require('./config/mongo');
 const { connectPostgres } = require('./config/postgres');
 const runMigrations = require('./config/migrations');
 
+const iniciarMQTT = require('./services/mqttclient');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,7 +29,7 @@ app.get('/health', (req, res) => {
 // ── Rutas de la API ───────────
 app.use('/api/v1/auth', require('./routes/auth'));
 app.use('/api/v1/nodos', require('./routes/nodos'));
-// app.use('/api/v1/telemetria', require('./routes/telemetria'));
+app.use('/api/v1/telemetria', require('./routes/telemetria'));
 // app.use('/api/v1/muestras',   require('./routes/muestras'));
 // app.use('/api/v1/alertas',    require('./routes/alertas'));
 // app.use('/api/v1/reportes',   require('./routes/reportes'));
@@ -41,6 +42,9 @@ async function start() {
     await connectMongo();
     await connectPostgres();
     await runMigrations();
+
+    require('./workers/telemetria.worker');
+    iniciarMQTT(io);
 
     server.listen(process.env.PORT, () => {
         console.log(`Servidor corriendo en http://localhost:${process.env.PORT}`);
