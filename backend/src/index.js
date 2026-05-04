@@ -21,9 +21,17 @@ const io = new Server(server, {
     cors: { origin: '*' }
 });
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 app.use(express.json());
 
+
+// Documentacion
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'SS IOT API Docs',
+    customCss: '.swagger-ui .topbar { background-color: #1F4E79; }'
+}));
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

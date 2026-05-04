@@ -4,7 +4,67 @@ const { pool } = require('../config/postgres');
 const { verificarToken } = require('../middleware/auth');
 const { verificarRol } = require('../middleware/roles');
 
-
+/**
+ * @swagger
+ * /alertas:
+ *   get:
+ *     tags: [Alertas]
+ *     summary: Obtener todas las alertas con filtros opcionales
+ *     parameters:
+ *       - in: query
+ *         name: resuelta
+ *         schema: { type: boolean }
+ *         description: Filtrar por estado de resolución
+ *       - in: query
+ *         name: nodo_id
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: parametro
+ *         schema: { type: string, enum: [ph, temperatura, conductividad, turbidez, tds] }
+ *     responses:
+ *       200:
+ *         description: Lista de alertas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total:   { type: integer }
+ *                 alertas:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Alerta'
+ *
+ * /alertas/{id}:
+ *   get:
+ *     tags: [Alertas]
+ *     summary: Detalle de una alerta
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Detalle de la alerta
+ *       404:
+ *         description: Alerta no encontrada
+ *
+ * /alertas/{id}/resolver:
+ *   put:
+ *     tags: [Alertas]
+ *     summary: Marcar alerta como resuelta (operador, icuap, admin)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Alerta resuelta
+ *       404:
+ *         description: Alerta no encontrada o ya resuelta
+ */
 router.get('/', verificarToken, async (req, res) => {
     try {
         const { resuelta, nodo_id, parametro } = req.query;

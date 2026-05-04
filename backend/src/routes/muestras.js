@@ -41,7 +41,57 @@ const muestraInputSchema = Joi.object({
     nota: Joi.string().max(500).optional().allow('')
 });
 
-
+/**
+ * @swagger
+ * /muestras:
+ *   get:
+ *     tags: [Muestras]
+ *     summary: Obtener muestras oficiales
+ *     parameters:
+ *       - in: query
+ *         name: nodo_id
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 50 }
+ *     responses:
+ *       200:
+ *         description: Lista de muestras oficiales
+ *
+ * /muestras/{id}:
+ *   get:
+ *     tags: [Muestras]
+ *     summary: Detalle de una muestra
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Detalle de la muestra
+ *
+ * /muestras/{id}/nota:
+ *   put:
+ *     tags: [Muestras]
+ *     summary: Actualizar nota de una muestra (icuap, admin)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nota: { type: string }
+ *     responses:
+ *       200:
+ *         description: Nota actualizada
+ */
 router.get('/', verificarToken, async (req, res) => {
     try {
         const { nodo_id, limit = 50 } = req.query;

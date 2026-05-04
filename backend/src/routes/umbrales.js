@@ -28,7 +28,57 @@ const umbralSchema = Joi.object({
     }).optional()
 });
 
-// Devuelve los umbrales de todos los nodos
+/**
+ * @swagger
+ * /umbrales:
+ *   get:
+ *     tags: [Umbrales]
+ *     summary: Umbrales de todos los nodos agrupados
+ *     description: Devuelve los límites NOM-127 configurados por nodo. Usar para dibujar líneas de referencia en las gráficas del dashboard.
+ *     responses:
+ *       200:
+ *         description: Umbrales agrupados por nodo
+ *
+ * /umbrales/{nodo_id}:
+ *   get:
+ *     tags: [Umbrales]
+ *     summary: Umbrales de un nodo específico
+ *     parameters:
+ *       - in: path
+ *         name: nodo_id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Umbrales del nodo indexados por parámetro
+ *   put:
+ *     tags: [Umbrales]
+ *     summary: Actualizar umbrales de un nodo (solo admin)
+ *     parameters:
+ *       - in: path
+ *         name: nodo_id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ph:
+ *                 type: object
+ *                 properties:
+ *                   valor_min: { type: number }
+ *                   valor_max: { type: number }
+ *               turbidez:
+ *                 type: object
+ *                 properties:
+ *                   valor_min: { type: number }
+ *                   valor_max: { type: number }
+ *     responses:
+ *       200:
+ *         description: Umbrales actualizados
+ */
 router.get('/', verificarToken, async (req, res) => {
     try {
         const result = await pool.query(

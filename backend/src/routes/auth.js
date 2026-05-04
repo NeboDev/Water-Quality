@@ -21,7 +21,33 @@ const registerSchema = Joi.object({
 });
 
 
-// Crea un nuevo usuario en el sistema
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Crear un nuevo usuario
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nombre, email, password, rol]
+ *             properties:
+ *               nombre:   { type: string, example: Administrador }
+ *               email:    { type: string, example: admin@buap.mx }
+ *               password: { type: string, example: admin123 }
+ *               rol:      { type: string, enum: [admin, operador, visualizador, icuap] }
+ *     responses:
+ *       201:
+ *         description: Usuario creado correctamente
+ *       400:
+ *         description: Datos inválidos
+ *       409:
+ *         description: Email ya registrado
+ */
 router.post('/register', async (req, res) => {
     try {
         // Valida el body contra el esquema definido arriba
@@ -60,7 +86,36 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// Verifica credenciales y devuelve un JWT
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Iniciar sesión y obtener token JWT
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:    { type: string, example: admin@buap.mx }
+ *               password: { type: string, example: admin123 }
+ *     responses:
+ *       200:
+ *         description: Login exitoso — devuelve token JWT
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:   { type: string }
+ *                 usuario: { type: object }
+ *       401:
+ *         description: Credenciales incorrectas
+ */
 router.post('/login', async (req, res) => {
     try {
         const { error, value } = loginSchema.validate(req.body);

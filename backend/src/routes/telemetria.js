@@ -23,8 +23,56 @@ const Telemetria = mongoose.models.Telemetria || mongoose.model('Telemetria',
 );
 
 
-// Devuelve la lectura mas reciente de cada nodo activo
-// Es lo que el dashboard muestra en la pantalla principal
+/**
+ * @swagger
+ * /telemetria/live:
+ *   get:
+ *     tags: [Telemetría]
+ *     summary: Última lectura de cada nodo activo
+ *     description: Usado por el dashboard para mostrar el estado actual al cargar la página. Complementar con WebSocket para actualizaciones en tiempo real.
+ *     responses:
+ *       200:
+ *         description: Lista con la última lectura por nodo
+ *
+ * /telemetria/{nodo_id}:
+ *   get:
+ *     tags: [Telemetría]
+ *     summary: Historial de lecturas de un nodo
+ *     parameters:
+ *       - in: path
+ *         name: nodo_id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 50, maximum: 500 }
+ *     responses:
+ *       200:
+ *         description: Lecturas del nodo
+ *
+ * /telemetria/{nodo_id}/rango:
+ *   get:
+ *     tags: [Telemetría]
+ *     summary: Lecturas de un nodo en un rango de fechas
+ *     parameters:
+ *       - in: path
+ *         name: nodo_id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: desde
+ *         required: true
+ *         schema: { type: string, format: date-time }
+ *         example: '2026-04-28T00:00:00Z'
+ *       - in: query
+ *         name: hasta
+ *         required: true
+ *         schema: { type: string, format: date-time }
+ *         example: '2026-04-28T23:59:59Z'
+ *     responses:
+ *       200:
+ *         description: Lecturas en el rango especificado
+ */
 router.get('/live', verificarToken, async (req, res) => {
     try {
         // Obtiene todos los nodos activos de PostgreSQL

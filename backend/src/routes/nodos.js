@@ -18,7 +18,90 @@ const actualizarSchema = Joi.object({
     activo: Joi.boolean().optional()
 });
 
-// Devuelve todos los nodos registrados
+/**
+ * @swagger
+ * /nodos:
+ *   get:
+ *     tags: [Nodos]
+ *     summary: Obtener todos los nodos registrados
+ *     responses:
+ *       200:
+ *         description: Lista de nodos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Nodo'
+ *   post:
+ *     tags: [Nodos]
+ *     summary: Registrar un nuevo nodo (solo admin)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [mac, ubicacion]
+ *             properties:
+ *               mac:        { type: string, example: 'A4:CF:12:45:6B:2F' }
+ *               ubicacion:  { type: string, example: 'Bebedero norte — Rectoría' }
+ *               version_fw: { type: string, example: '1.0.0' }
+ *     responses:
+ *       201:
+ *         description: Nodo registrado con umbrales NOM-127 precargados
+ *       409:
+ *         description: MAC ya registrada
+ */
+
+/**
+ * @swagger
+ * /nodos/{id}:
+ *   get:
+ *     tags: [Nodos]
+ *     summary: Obtener detalle de un nodo con sus umbrales
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Detalle del nodo
+ *       404:
+ *         description: Nodo no encontrado
+ *   put:
+ *     tags: [Nodos]
+ *     summary: Actualizar nodo (solo admin)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ubicacion:  { type: string }
+ *               version_fw: { type: string }
+ *               activo:     { type: boolean }
+ *     responses:
+ *       200:
+ *         description: Nodo actualizado
+ *   delete:
+ *     tags: [Nodos]
+ *     summary: Eliminar nodo (solo admin)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Nodo eliminado
+ */
 router.get('/', verificarToken, async (req, res) => {
     try {
         const result = await pool.query(
