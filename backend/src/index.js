@@ -32,8 +32,8 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', require('./routes/auth'));
 app.use('/api/v1/nodos', require('./routes/nodos'));
 app.use('/api/v1/telemetria', require('./routes/telemetria'));
-// app.use('/api/v1/muestras',   require('./routes/muestras'));
-// app.use('/api/v1/alertas',    require('./routes/alertas'));
+// app.use('/api/v1/muestras', require('./routes/muestras'));
+app.use('/api/v1/alertas', require('./routes/alertas'));
 // app.use('/api/v1/reportes',   require('./routes/reportes'));
 // app.use('/api/v1/umbrales',   require('./routes/umbrales'));
 
