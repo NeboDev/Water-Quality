@@ -22,10 +22,10 @@ Obtén el token haciendo POST a \`/api/v1/auth/login\`.
         ],
         components: {
             securitySchemes: {
-                bearerAuth: {
-                    type: 'http',
-                    scheme: 'bearer',
-                    bearerFormat: 'JWT'
+                cookieAuth: {
+                    type: 'apiKey',
+                    in: 'cookie',
+                    name: 'kanan_token'
                 }
             },
             schemas: {
@@ -94,7 +94,7 @@ Obtén el token haciendo POST a \`/api/v1/auth/login\`.
                 }
             }
         },
-        security: [{ bearerAuth: [] }],
+        security: [{ cookieAuth: [] }],
         tags: [
             { name: 'Auth', description: 'Autenticación y gestión de sesión' },
             { name: 'Nodos', description: 'Gestión de nodos IoT registrados' },
