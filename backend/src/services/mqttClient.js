@@ -5,10 +5,19 @@ const { addTelemetriaQueue } = require('./queue');
 // Se conecta al broker y se suscribe a todos los tópicos
 // de telemetría usando el wildcard + que significa "cualquier MAC"
 function iniciarMQTT(io) {
-    const client = mqtt.connect(process.env.MQTT_BROKER);
+
+    const mqtttOptions = {
+        username: process.env.MQTT_USER,
+        password: process.env.MQTT_PASSWORD,
+        clientId: 'kanan_backend_' + Math.random().toString(16).substr(2, 8),
+        protocol: 'mqtts',
+        rejectUnauthorized: false
+    }
+
+    const client = mqtt.connect(process.env.MQTT_BROKER, mqtttOptions);
 
     client.on('connect', () => {
-        console.log('MQTT conectado al broker');
+        console.log('MQTT conectado al broker de forma segura');
 
         // El # al final es wildcard multinivel de MQTT
         // captura nodo/A4:CF:12:45:6B:2F/telemetria

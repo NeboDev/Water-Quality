@@ -2,14 +2,10 @@ const jwt = require('jsonwebtoken');
 
 function verificarToken(req, res, next) {
     // El token llega en el header Authorization con formato: "Bearer <token>"
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-        return res.status(401).json({ mensaje: 'Token requerido' });
-    }
+    const token = req.cookies?.kanan_token;
 
-    const token = authHeader.split(' ')[1];
     if (!token) {
-        return res.status(401).json({ mensaje: 'Formato de token invalido' });
+        return res.status(401).json({ mensaje: 'Sesión no iniciada' });
     }
 
     try {
@@ -21,7 +17,9 @@ function verificarToken(req, res, next) {
         req.usuario = decoded;
         next();
     } catch (error) {
-        return res.status(401).json({ mensaje: 'Token invalido o expirado' });
+        // Limpia la cookie si el token expiro o es invalido
+        res.cookie('kanan_token', '', { httpOnly: true, maxAge: 0 });
+        return res.status(401).json({ mensaje: 'Sesión expirada, inicia sesión nuevamente' });
     }
 }
 

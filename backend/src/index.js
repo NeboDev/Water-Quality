@@ -4,6 +4,9 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
+
 const connectMongo = require('./config/mongo');
 const { connectPostgres } = require('./config/postgres');
 const runMigrations = require('./config/migrations');
@@ -24,8 +27,13 @@ const io = new Server(server, {
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 
-app.use(express.json());
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:3001'],
+    credentials: true
+}));
 
+app.use(express.json());
+app.use(cookieParser());
 
 // Documentacion
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -43,7 +51,7 @@ app.use('/api/v1/nodos', require('./routes/nodos'));
 app.use('/api/v1/telemetria', require('./routes/telemetria'));
 app.use('/api/v1/muestras', require('./routes/muestras'));
 app.use('/api/v1/alertas', require('./routes/alertas'));
-// app.use('/api/v1/reportes',   require('./routes/reportes'));
+app.use('/api/v1/reportes', require('./routes/reportes'));
 app.use('/api/v1/umbrales', require('./routes/umbrales'));
 
 // ── Expone el io para usarlo desde cualquier parte del backend ─

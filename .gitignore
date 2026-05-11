@@ -37,3 +37,8 @@ docker-compose.override.yml
 .http
 *.http
 *.html
+
+# mosquitto
+mosquitto/config/passwd
+mosquitto/config/acl_file
+mosquitto/certs

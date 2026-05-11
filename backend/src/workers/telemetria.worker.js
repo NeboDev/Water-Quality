@@ -20,6 +20,78 @@ const Telemetria = mongoose.models.Telemetria || mongoose.model('Telemetria',
     })
 );
 
+const rateLimiter = new Map();
+const RATE_LIMIT_MAX = 10;  // maximo de mensajes permitidos por ventana
+const RATE_LIMIT_VENTANA = 60 * 1000; // ventana de 60 segundos en ms (esto cambiara si el ICUAP sale con algo)
+
+function verificarRateLimit(mac) {
+    const ahora = Date.now();
+    const entrada = rateLimiter.get(mac);
+
+    if (!entrada) {
+        // Primera vez que este nodo publica se inicializa su contador
+        rateLimiter.set(mac, { count: 1, inicio: ahora });
+        return true;
+    }
+
+    // Si la ventana de tiempo expiro reinicia el contador
+    if (ahora - entrada.inicio > RATE_LIMIT_VENTANA) {
+        rateLimiter.set(mac, { count: 1, inicio: ahora });
+        return true;
+    }
+
+    // Si esta dentro de la ventana verifica el limite
+    if (entrada.count >= RATE_LIMIT_MAX) {
+        console.warn(`[RateLimit] Nodo ${mac} supero ${RATE_LIMIT_MAX} mensajes en 60s - descartando`);
+        return false;
+    }
+
+    entrada.count++;
+    return true;
+}
+
+// Limpia el Map cada 5 minutos para evitar acumulacion en memoria
+setInterval(() => {
+    const ahora = Date.now();
+    for (const [mac, entrada] of rateLimiter.entries()) {
+        if (ahora - entrada.inicio > RATE_LIMIT_VENTANA * 2) {
+            rateLimiter.delete(mac);
+        }
+    }
+}, 5 * 60 * 1000);
+
+const RANGOS_FISICOS = {
+    ph: { min: 0, max: 14 },
+    temperatura: { min: -10, max: 100 },
+    conductividad: { min: 0, max: 10000 },
+    turbidez: { min: 0, max: 1000 },
+    tds: { min: 0, max: 5000 }
+};
+
+function validarRangosFisicos(valores) {
+    const errores = [];
+
+    for (const [parametro, rango] of Object.entries(RANGOS_FISICOS)) {
+        const valor = valores[parametro];
+
+        // Si el parametro no viene en el payload lo ignoramos
+        if (valor === undefined || valor === null) continue;
+
+        // Verifica que sea un numero real
+        if (typeof valor !== 'number' || isNaN(valor) || !isFinite(valor)) {
+            errores.push(`${parametro}: valor no numerico (${valor})`);
+            continue;
+        }
+
+        // Verifica que este dentro del rango fisicamente posible
+        if (valor < rango.min || valor > rango.max) {
+            errores.push(`${parametro}: ${valor} fuera del rango fisico posible (${rango.min}-${rango.max})`);
+        }
+    }
+
+    return errores;
+}
+
 // Compara cada valor recibido contra los umbrales almacenados
 // en PostgreSQL y devuelve la lista de parametros fuera de rango
 async function validarContraUmbrales(nodo_id, valores) {
@@ -84,6 +156,10 @@ async function registrarAlerta(nodo_id, anomalia) {
 const worker = new Worker('telemetria', async (job) => {
     const { mac, payload } = job.data;
 
+    if (!verificarRateLimit(mac)) {
+        return;
+    }
+
     // Verifica que el nodo este registrado y activo
     const nodoResult = await pool.query(
         'SELECT id, ubicacion FROM nodos WHERE mac = $1 AND activo = TRUE',
@@ -98,6 +174,13 @@ const worker = new Worker('telemetria', async (job) => {
     const nodo_id = nodoResult.rows[0].id;
     const ubicacion = nodoResult.rows[0].ubicacion;
     const { ph, temperatura, conductividad, turbidez, tds } = payload;
+
+    const erroresFisicos = validarRangosFisicos({ ph, temperatura, conductividad, turbidez, tds });
+    if (erroresFisicos.length > 0) {
+        console.warn(`[Validacion] Payload con valores imposibles desde MAC ${mac}:`);
+        erroresFisicos.forEach(e => console.warn(`  - ${e}`));
+        return; // descarta el mensaje sin escribir nada en la base de datos
+    }
 
     // Guarda la lectura en MongoDB
     const lectura = new Telemetria({
