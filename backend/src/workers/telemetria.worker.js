@@ -86,7 +86,7 @@ const worker = new Worker('telemetria', async (job) => {
 
     // Verifica que el nodo este registrado y activo
     const nodoResult = await pool.query(
-        'SELECT id FROM nodos WHERE mac = $1 AND activo = TRUE',
+        'SELECT id, ubicacion FROM nodos WHERE mac = $1 AND activo = TRUE',
         [mac]
     );
 
@@ -96,6 +96,7 @@ const worker = new Worker('telemetria', async (job) => {
     }
 
     const nodo_id = nodoResult.rows[0].id;
+    const ubicacion = nodoResult.rows[0].ubicacion;
     const { ph, temperatura, conductividad, turbidez, tds } = payload;
 
     // Guarda la lectura en MongoDB
@@ -132,7 +133,7 @@ const worker = new Worker('telemetria', async (job) => {
                 io.emit('alertas:nueva', {
                     nodo_id,
                     mac,
-                    alerta
+                    alerta: { ...alerta, nodo_id, ubicacion: ubicacion || mac }
                 });
             }
         }
