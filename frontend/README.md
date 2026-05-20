@@ -1,131 +1,105 @@
-# AquaMonitor — Dashboard IoT
+# AquaMonitor — Dashboard IoT (Frontend)
 **Sistema de monitoreo de calidad del agua · NOM-127-SSA1-2021 · BUAP**
 
----
-
-## 🚀 Instalación rápida
-
-```bash
-cd SS
-npm install
-npm run dev
-```
-
-Abre `http://localhost:5173` en tu navegador.
+Esta carpeta contiene el código de la aplicación del cliente (Frontend) construida con **React, Vite, TailwindCSS y Recharts**. Esta aplicación es totalmente independiente y portátil, y puede ser compartida y ejecutada en cualquier máquina que cuente con acceso al backend de la aplicación.
 
 ---
 
-## 📁 Estructura del proyecto
+## 🚀 Instalación y Ejecución Rápida
+
+Sigue estos pasos para instalar y ejecutar el frontend de forma independiente:
+
+1. **Instalar dependencias**:
+   Ingresa a la carpeta del frontend e instala los paquetes necesarios usando tu gestor de paquetes preferido (`npm`, `pnpm` o `yarn`):
+   ```bash
+   npm install
+   ```
+
+2. **Configurar variables de entorno**:
+   Crea un archivo `.env` en la raíz de esta carpeta (`frontend/`) para definir las direcciones del backend. Puedes basarte en el archivo `.env.example`:
+   ```bash
+   cp .env.example .env
+   ```
+   Asegúrate de editar el archivo `.env` con la dirección IP o dominio de la máquina donde esté corriendo tu backend:
+   ```env
+   VITE_API_URL=http://localhost:3000/api/v1
+   VITE_SOCKET_URL=http://localhost:3000
+   ```
+
+3. **Ejecutar en modo de desarrollo**:
+   Inicia el servidor local de Vite:
+   ```bash
+   npm run dev
+   ```
+   Abre [http://localhost:5173](http://localhost:5173) en tu navegador para ver el dashboard.
+
+4. **Compilar para producción**:
+   Si deseas generar la versión de producción optimizada y lista para desplegar:
+   ```bash
+   npm run build
+   ```
+   Esto generará una carpeta `dist/` que contiene todos los archivos estáticos HTML/JS/CSS listos para ser servidos por Nginx, Apache o cualquier servidor web.
+
+---
+
+## 📁 Estructura del Proyecto
 
 ```
-water-monitor/
+frontend/
 ├── src/
-│   ├── components/
-│   │   ├── Header.jsx         # Barra superior: selector de nodo, toggle de vista
-│   │   ├── StatusBar.jsx      # Resumen de parámetros en tiempo real
-│   │   ├── ParameterCard.jsx  # Gráfica de línea con límites NOM-127
-│   │   ├── BatteryIndicator.jsx # Estado de batería del nodo
-│   │   └── NodeMap.jsx        # Mapa SVG de CU con nodos activos
-│   ├── constants.js           # Límites NOM-127, colores, datos mock
-│   ├── App.jsx                # Componente raíz
-│   ├── App.css                # Estilos globales (tema oscuro industrial)
-│   └── main.jsx               # Entry point
-├── index.html
-├── vite.config.js             # Proxy /api → backend Node.js
-└── package.json
+│   ├── components/       # Componentes visuales reutilizables (gráficas, formularios, etc.)
+│   ├── pages/            # Vistas principales de la app (Mapa, Login, Reportes, Vista General)
+│   ├── hooks/            # Custom hooks de React (permisos basados en roles)
+│   ├── constants.js      # Límites de la norma NOM-127-SSA1-2021 y configuraciones globales
+│   ├── api.js            # Cliente Axios configurado con variables de entorno para llamadas REST
+│   ├── App.jsx           # Componente principal y conexión a WebSockets (Socket.io)
+│   ├── index.css         # Estilos globales y tokens de diseño TailwindCSS
+│   └── main.jsx          # Punto de entrada de la aplicación
+├── .env.example          # Plantilla para la configuración de endpoints
+├── .env                  # Configuración local de endpoints activa
+├── .gitignore            # Exclusión de archivos locales para repositorios Git
+├── index.html            # Plantilla HTML base
+├── tailwind.config.js    # Configuración de estilos y paleta de colores BUAP/industrial
+├── postcss.config.js     # Procesamiento CSS
+├── vite.config.js        # Configuración del bundler Vite
+└── package.json          # Gestión de dependencias del frontend (autónomo)
 ```
 
 ---
 
-## 🔌 Integración con el backend
+## 🔌 Configuración de Variables de Entorno
 
-### Formato del JSON esperado desde tu API Express.js
+El frontend se conecta con el backend a través de llamadas REST y WebSockets en tiempo real. Para permitir la portabilidad del frontend a otras máquinas, se utilizan las siguientes variables de entorno en el archivo `.env`:
 
-```json
-{
-  "node_id": "ESP32-N01",
-  "mac": "AA:BB:CC:DD:EE:01",
-  "ubicacion": "Depósito Norte",
-  "status": "activo",
-  "version_firmware": "v1.2.3",
-  "timestamp": "2026-03-17T10:30:00.000Z",
-  "bateria": 87,
-  "valores": {
-    "ph": 7.2,
-    "turbidez": 1.5,
-    "conductividad": 312,
-    "temperatura": 18.5,
-    "tds": 205
-  }
-}
-```
+* **`VITE_API_URL`**: La URL base para el backend de la API. Debe apuntar a la ruta `/api/v1`. Ejemplo: `http://192.168.1.100:3000/api/v1`.
+* **`VITE_SOCKET_URL`**: La URL base del servidor Socket.io para la telemetría en tiempo real. Ejemplo: `http://192.168.1.100:3000`.
 
-### Endpoints sugeridos
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/nodes` | Lista todos los nodos con su estado actual |
-| `GET` | `/api/nodes/:id/telemetry` | Historial de telemetría de un nodo (últimas 24h) |
-| `GET` | `/api/nodes/:id/muestras` | Muestras oficiales del día |
-| `GET` | `/api/nodes/:id/latest` | Última lectura del nodo |
-
-### Conectar con datos reales
-
-En `src/constants.js`, reemplaza `MOCK_NODES` con una llamada a tu API:
-
-```js
-// En App.jsx, reemplaza el estado inicial:
-const [nodes, setNodes] = useState([]);
-
-useEffect(() => {
-  fetch("/api/nodes")
-    .then(r => r.json())
-    .then(data => {
-      setNodes(data);
-      setSelectedNode(data[0]);
-    });
-}, []);
-
-// Para actualizaciones en tiempo real usa WebSocket:
-useEffect(() => {
-  const ws = new WebSocket("ws://localhost:3000");
-  ws.onmessage = (e) => {
-    const payload = JSON.parse(e.data);
-    setNodes(prev => prev.map(n =>
-      n.node_id === payload.node_id ? { ...n, ...payload } : n
-    ));
-  };
-  return () => ws.close();
-}, []);
-```
+*Nota: Si estas variables no se configuran, la aplicación utilizará `http://localhost:3000` como dirección predeterminada.*
 
 ---
 
-## 📊 Parámetros NOM-127-SSA1-2021
+## 📊 Parámetros NOM-127-SSA1-2021 Soportados
+
+El dashboard monitorea en tiempo real y evalúa según los límites oficiales del agua para uso y consumo humano:
 
 | Parámetro | Mínimo | Máximo | Unidad |
 |-----------|--------|--------|--------|
-| pH | 6.5 | 8.5 | — |
-| Turbidez | 0 | 5 | NTU |
-| Conductividad | 0 | 1500 | µS/cm |
-| Temperatura | 0 | 40 | °C |
-| TDS | 0 | 1000 | mg/L |
+| **pH** | 6.5 | 8.5 | — |
+| **Turbidez** | 0.0 | 5.0 | NTU |
+| **Conductividad** | 0 | 1500 | µS/cm |
+| **Temperatura** | 0.0 | 40.0 | °C |
+| **TDS (Sólidos Disueltos Totales)** | 0 | 1000 | mg/L |
 
 ---
 
-## 🧩 Dependencias
+## 🧩 Dependencias Principales
 
-- **React 18** — UI
-- **Recharts** — Gráficas de series de tiempo
-- **Vite** — Bundler y servidor de desarrollo
+El proyecto gestiona de forma autónoma las siguientes dependencias clave:
 
----
-
-## 🔮 Próximas funcionalidades sugeridas
-
-- [ ] Autenticación (JWT)
-- [ ] Exportación de reportes PDF (NOM-127)
-- [ ] Panel de alertas con historial
-- [ ] Integración con bot de Telegram
-- [ ] Modelos de IA para predicción de tendencias
-- [ ] Vista de muestras oficiales con formulario de notas
+* **React 18** & **Vite**: Biblioteca de interfaz de usuario y herramienta de compilación ultrarrápida.
+* **Recharts**: Visualización interactiva de gráficos de series temporales de telemetría.
+* **Leaflet & React-Leaflet**: Mapas geográficos interactivos para visualizar la ubicación de los nodos.
+* **Socket.io-client**: Conexión de sockets en tiempo real para recibir telemetría instantánea de los sensores.
+* **Axios**: Cliente HTTP para realizar peticiones REST (auth, gestión de nodos, reportes).
+* **@tsparticles/react** & **@tsparticles/slim**: Efecto visual interactivo de burbujas de agua para la pantalla de inicio de sesión.
+* **TailwindCSS**: Estructura de estilos CSS utilitarios modernos y responsivos.

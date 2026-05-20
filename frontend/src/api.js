@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // URL base del backend... CAMBIAR A A LA URL DEL SERVER CUANDO PASE A PRODUCCION
-  baseURL: 'http://localhost:3000/api/v1',
+  // URL base del backend obtenida de variables de entorno con fallback a localhost
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
   withCredentials: true,
 });
 
