@@ -30,7 +30,7 @@ client.on('connect', async () => {
 
     // Publicar telemetría 
     setInterval(() => {
-      nodos.forEach(mac => {
+      nodos.slice(0, 2).forEach(mac => {
         const payload = {
           ph: Number((Math.random() * 4 + 5.5).toFixed(2)),
           temperatura: Number((Math.random() * 15 + 15).toFixed(2)),
@@ -44,6 +44,22 @@ client.on('connect', async () => {
         console.log(`[${mac}] Publicado:`, payload);
       });
     }, 5000);
+
+    setInterval(() => {
+      nodos.slice(2, 4).forEach(mac => {
+        const payload = {
+          ph: Number((Math.random() * 4 + 5.5).toFixed(2)),
+          temperatura: Number((Math.random() * 15 + 15).toFixed(2)),
+          conductividad: Math.floor(Math.random() * 1000 + 500),
+          turbidez: Number((Math.random() * 6).toFixed(2)),
+          tds: Math.floor(Math.random() * 600 + 200)
+        };
+
+        const topic = `nodo/${mac}/telemetria`;
+        client.publish(topic, JSON.stringify(payload));
+        console.log(`[${mac}] Publicado:`, payload);
+      });
+    }, 8000);
 
   } catch (err) {
     console.error('Error al conectar con la base de datos:', err);

@@ -27,6 +27,7 @@ const OVERVIEW_POINTS = 10;
 function buildMultiNodeData(nodes, param) {
   const timeMap = {};
 
+  // 1. Recopilar todos los puntos de tiempo únicos de todos los nodos
   nodes.forEach((node, idx) => {
     if (!node.history?.[param]) return;
     node.history[param].forEach((point) => {
@@ -36,13 +37,40 @@ function buildMultiNodeData(nodes, param) {
       if (!timeMap[bucketKey]) {
         timeMap[bucketKey] = { _ts: point.timestamp, time: point.time };
       }
-      timeMap[bucketKey][`node_${idx}`] = point.value;
     });
   });
 
-  // Sort chronologically, keep only the last OVERVIEW_POINTS buckets
-  const sorted = Object.values(timeMap).sort((a, b) => a._ts - b._ts);
-  return sorted.slice(-OVERVIEW_POINTS);
+  // 2. Ordenar cronológicamente todos los buckets de tiempo
+  const sortedBuckets = Object.values(timeMap).sort((a, b) => a._ts - b._ts);
+
+  // 3. Para cada nodo, recorrer la línea de tiempo y propagar el último valor conocido
+  nodes.forEach((node, idx) => {
+    if (!node.history?.[param]) return;
+
+    // Mapear los valores reales que sí existen para este nodo por su tiempo
+    const nodeValsByTime = {};
+    node.history[param].forEach((point) => {
+      nodeValsByTime[point.time] = point.value;
+    });
+
+    // Iniciar con la primera muestra disponible del nodo para evitar huecos iniciales
+    let lastKnownVal = node.history[param].length > 0 ? node.history[param][0].value : undefined;
+
+    sortedBuckets.forEach((bucket) => {
+      const currentVal = nodeValsByTime[bucket.time];
+      if (currentVal !== undefined) {
+        lastKnownVal = currentVal;
+      }
+      
+      // Asignar el último valor conocido para garantizar la continuidad lineal en la gráfica
+      if (lastKnownVal !== undefined) {
+        bucket[`node_${idx}`] = lastKnownVal;
+      }
+    });
+  });
+
+  // Retornar los últimos OVERVIEW_POINTS buckets ordenados
+  return sortedBuckets.slice(-OVERVIEW_POINTS);
 }
 
 const CustomTooltip = ({ active, payload, label, nodes, unit }) => {
