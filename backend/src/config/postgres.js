@@ -4,7 +4,7 @@ const { Pool } = require('pg');
 // abrir y cerrar una conexion por cada query lo que es
 // mucho mas eficiente para una API con múltiples peticiones simultáneas
 const pool = new Pool({
-    connectionString: process.env.PG_URI
+    connectionString: process.env.PG_URI,
 });
 
 async function connectPostgres() {
