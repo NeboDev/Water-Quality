@@ -1,27 +1,26 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { NOM_127_LIMITS, PARAMS } from "../constants";
 
-// ── CU BUAP coordinates ─────────────────────────────
-// Ciudad Universitaria, Benemérita Universidad Autónoma de Puebla
+//cu coords
 const CU_CENTER = [19.001116496808024, -98.20175497632175];
 const CU_ZOOM = 16;
 
 const STORAGE_KEY = "aquamonitor_node_positions";
 
-// Status colors
+// node color status
 const STATUS_COLOR = {
   activo: "#1a8a55",
   alerta: "#ef4444",
   inactivo: "#94a3b8",
 };
 
-// Default positions around CU BUAP for nodes that have none saved
+// default node positions
 const DEFAULT_OFFSETS = [
-  [19.04600, -98.19950],
-  [19.04280, -98.20100],
-  [19.04500, -98.19700],
-  [19.04200, -98.19800],
-  [19.04700, -98.19800],
+  [19.001116, -98.201754],
+  [19.003500, -98.204000],
+  [18.998500, -98.199000],
+  [19.004000, -98.198500],
+  [18.997000, -98.205000],
 ];
 
 function loadSavedPositions() {
@@ -32,7 +31,7 @@ function savePositions(positions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
 }
 
-// Build a colored SVG marker icon for Leaflet
+// node icons
 function buildIcon(L, color, isSelected, isDraggable) {
   const size = isSelected ? 40 : 32;
 
@@ -86,7 +85,7 @@ function getNodeColor(node) {
   return STATUS_COLOR[node.status] || STATUS_COLOR.activo;
 }
 
-// Popup card content
+// popup when press node on the map
 function buildPopupHTML(node, color) {
   const vals = node.valores;
   const isOut = (param) => {
@@ -132,11 +131,9 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
 
   const isDraggable = isAdmin && dragMode;
 
-  // ── Init Leaflet map ──────────────────────────────
   useEffect(() => {
     if (leafletRef.current) return;
     import("leaflet").then((L) => {
-      // Fix default marker icon paths broken by Vite
       delete L.Icon.Default.prototype._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
@@ -144,16 +141,25 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
 
+      const CU_BOUNDS = [
+        [18.9850, -98.2150], // Suroeste
+        [19.0150, -98.1850], // Noreste
+      ];
+
       const map = L.map(mapRef.current, {
         center: CU_CENTER,
         zoom: CU_ZOOM,
+        minZoom: 15,
+        maxBounds: CU_BOUNDS,
+        maxBoundsViscosity: 1.0, // impide ir mas alla del recuadro en ventana
         zoomControl: true,
         scrollWheelZoom: true,
       });
 
-      // Google Maps tiles
-      L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
-        attribution: '&copy; Google Maps',
+      // estilo de caartodb
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
         maxZoom: 20,
       }).addTo(map);
 
@@ -224,7 +230,7 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
 
   useEffect(() => {
     if (!leafletRef.current) {
-      // Leaflet may still be loading; retry
+      // Leaflet may still be loading, so retry
       const t = setTimeout(syncMarkers, 400);
       return () => clearTimeout(t);
     }
@@ -260,39 +266,10 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
     });
   };
 
-  const handleLocateUser = () => {
-    if (!leafletRef.current) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        const { latitude, longitude } = pos.coords;
-        const { map, L } = leafletRef.current;
-        map.flyTo([latitude, longitude], 18, { animate: true, duration: 1.5 });
-
-        if (!leafletRef.current.userMarker) {
-          const userIcon = L.divIcon({
-            html: `<div style="width:16px;height:16px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(59,130,246,0.8)"></div>`,
-            className: "",
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
-          });
-          leafletRef.current.userMarker = L.marker([latitude, longitude], { icon: userIcon }).addTo(map);
-        } else {
-          leafletRef.current.userMarker.setLatLng([latitude, longitude]);
-        }
-      },
-      (err) => {
-        setLocating(false);
-        console.warn("Error de geolocalización:", err);
-      },
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
-  };
 
   return (
     <div className="flex gap-5 flex-1 min-h-0 animate-fade-in">
-      {/* ── Left Sidebar: Nodes List ── */}
+      {/* node list left sidebar */}
       <div className="w-72 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar flex-shrink-0 relative">
         <div className="sticky top-0 bg-slate-50 py-2 z-10 border-b border-slate-200 mb-1">
           <h2 className="text-sm font-bold text-buap-900">
@@ -300,38 +277,47 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
           </h2>
         </div>
         <div className="flex flex-col gap-3 px-1 pb-1">
-          {nodes.map((node) => {
-            const color = getNodeColor(node);
-            const isSel = selectedNode?.id === node.id;
-            return (
-              <div
-                key={node.id}
-                onClick={() => onSelectNode(node)}
-                className={`card-hover p-4 cursor-pointer transition-all ${isSel ? "ring-2 ring-offset-2" : ""
-                  }`}
-                style={isSel ? { "--tw-ring-color": color, borderColor: color + "50" } : {}}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: color }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-buap-900 truncate" title={node.ubicacion}>
-                      {node.ubicacion}
-                    </p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{node.node_id}</p>
+          {nodes.length === 0 ? (
+            <div className="p-4 text-center flex flex-col items-center gap-2 mt-2 text-slate-400">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1-8h-2V7h2v2z" fill="currentColor" />
+              </svg>
+              <p className="text-xs">Sin nodos registrados</p>
+            </div>
+          ) : (
+            nodes.map((node) => {
+              const color = getNodeColor(node);
+              const isSel = selectedNode?.id === node.id;
+              return (
+                <div
+                  key={node.id}
+                  onClick={() => onSelectNode(node)}
+                  className={`card-hover p-4 cursor-pointer transition-all ${isSel ? "ring-2 ring-offset-2" : ""
+                    }`}
+                  style={isSel ? { "--tw-ring-color": color, borderColor: color + "50" } : {}}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-buap-900 truncate" title={node.ubicacion}>
+                        {node.ubicacion}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{node.node_id}</p>
 
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-[11px] font-mono font-semibold" style={{ color }}>
-                        {node.valores ? `pH ${node.valores.ph} · ${node.valores.temperatura}°C` : "Sin datos"}
-                      </span>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-[11px] font-mono font-semibold" style={{ color }}>
+                          {node.valores ? `pH ${node.valores.ph} · ${node.valores.temperatura}°C` : "Sin datos"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
 
           {/* Admin controls */}
-          {isAdmin && (
+          {isAdmin && nodes.length > 0 && (
             <div className="mt-2 pt-4 border-t border-slate-200 flex flex-col gap-2">
               <button
                 onClick={() => { setDragMode((v) => !v); setUnsaved(false); }}
@@ -365,27 +351,23 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
         </div>
       </div>
 
-      {/* ── Right Area: Map ── */}
+      {/* map, right panel */}
       <div className="flex flex-col flex-1 min-w-0">
 
-        {/* Map */}
+        {/* map*/}
         <div className="card overflow-hidden flex-1 border border-slate-200/60 shadow-inner min-h-[400px] relative">
           <div ref={mapRef} className="w-full h-full" />
-          <button
-            onClick={handleLocateUser}
-            disabled={locating}
-            title="Mi ubicación"
-            className="absolute bottom-6 right-6 z-[400] w-12 h-12 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-600 hover:text-buap-700 hover:bg-slate-50 transition-all hover:scale-105 disabled:opacity-70 disabled:hover:scale-100"
-          >
-            {locating ? (
-              <span className="w-5 h-5 border-2 border-slate-200 border-t-buap-700 rounded-full animate-spin" />
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            )}
-          </button>
+
+          {nodes.length === 0 && (
+            <div className="absolute inset-0 z-[1000] bg-white/70 backdrop-blur-[2px] flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3 text-slate-500 bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1-8h-2V7h2v2z" fill="currentColor" />
+                </svg>
+                <p className="text-sm font-medium">No hay nodos registrados para mostrar en el mapa.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

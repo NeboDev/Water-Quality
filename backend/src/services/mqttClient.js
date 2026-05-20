@@ -10,7 +10,8 @@ function iniciarMQTT(io) {
         username: process.env.MQTT_USER,
         password: process.env.MQTT_PASSWORD,
         clientId: 'kanan_backend_' + Math.random().toString(16).substr(2, 8),
-        protocol: 'mqtts',
+        //DESCOMENTAR ANTES DE PRODUCCIOOON, ES SOLO PARA SIMULAR
+        //protocol: 'mqtts', 
         rejectUnauthorized: false
     }
 

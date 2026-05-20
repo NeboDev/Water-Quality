@@ -1,117 +1,134 @@
-const BASE = "";
+import axios from 'axios';
 
-function headers(token) {
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
-  };
-}
+const api = axios.create({
+  // URL base del backend... CAMBIAR A A LA URL DEL SERVER CUANDO PASE A PRODUCCION
+  baseURL: 'http://localhost:3000/api/v1',
+  withCredentials: true,
+});
 
-async function get(path, token) {
-  const res = await fetch(`${BASE}${path}`, { headers: headers(token) });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+// Interceptor de respuesta — maneja errores de sesión globalmente
+// Si el backend devuelve 401 significa que la sesión expiró
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+    }
+    // Formatea el error para mantener compatibilidad con el resto del código
+    const mensaje = error.response?.data?.mensaje || `Error ${error.response?.status || 'desconocido'}`;
+    return Promise.reject(new Error(mensaje));
+  }
+);
+
+// ── Autenticación ─────────────────────────────────────
+
+export async function login(email, password) {
+  const { data } = await api.post("/auth/login", { email, password });
   return data;
 }
 
-async function post(path, token, body) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: headers(token),
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+export async function logout() {
+  const { data } = await api.post("/auth/logout");
   return data;
 }
 
-async function put(path, token, body = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "PUT",
-    headers: headers(token),
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+export async function checkSession() {
+  const { data } = await api.get("/auth/me");
   return data;
 }
 
 // ── Nodos ─────────────────────────────────────────────
 
-// GET /api/v1/nodos
-export async function fetchNodos(token) {
-  const data = await get("/api/v1/nodos", token);
-  return data; // Array of nodes directly
-}
-
-// POST /api/v1/nodos — solo admin
-export async function registrarNodo(token, { mac, ubicacion, version_fw }) {
-  return post("/api/v1/nodos", token, { mac, ubicacion, version_fw });
-}
-
-// PUT /api/v1/nodos/:id — solo admin (campos parciales: ubicacion, version_fw, activo)
-export async function editarNodo(token, id, campos) {
-  return put(`/api/v1/nodos/${id}`, token, campos);
-}
-
-// DELETE /api/v1/nodos/:id — solo admin
-export async function eliminarNodo(token, id) {
-  const res = await fetch(`/api/v1/nodos/${id}`, {
-    method: "DELETE",
-    headers: { "Authorization": `Bearer ${token}` },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+export async function fetchNodos() {
+  const { data } = await api.get("/nodos");
   return data;
 }
 
-// GET /api/v1/telemetria/:id
-export async function fetchTelemetria(token, nodoId, limit = 50) {
-  const data = await get(`/api/v1/telemetria/${nodoId}?limit=${limit}`, token);
-  return data.lecturas; // array newest→oldest
+export async function registrarNodo({ mac, ubicacion, version_fw }) {
+  const { data } = await api.post("/nodos", { mac, ubicacion, version_fw });
+  return data;
 }
 
-// GET /api/v1/telemetria/:id/rango?desde=x&hasta=y
-export async function fetchTelemetriaRango(token, nodoId, desde, hasta) {
-  const params = new URLSearchParams({ desde, hasta });
-  const data = await get(`/api/v1/telemetria/${nodoId}/rango?${params}`, token);
-  return data.lecturas; // array newest→oldest
+export async function editarNodo(id, campos) {
+  const { data } = await api.put(`/nodos/${id}`, campos);
+  return data;
+}
+
+export async function eliminarNodo(id) {
+  const { data } = await api.delete(`/nodos/${id}`);
+  return data;
+}
+
+// ── Telemetría ────────────────────────────────────────
+
+export async function fetchTelemetria(nodoId, limit = 50) {
+  const { data } = await api.get(`/telemetria/${nodoId}?limit=${limit}`);
+  return data.lecturas;
+}
+
+export async function fetchTelemetriaRango(nodoId, desde, hasta) {
+  const { data } = await api.get(`/telemetria/${nodoId}/rango`, { params: { desde, hasta } });
+  return data.lecturas;
 }
 
 // ── Alertas ───────────────────────────────────────────
 
-// GET /api/v1/alertas?resuelta=false&nodo_id=xxx
-export async function fetchAlertas(token, { resuelta, nodo_id } = {}) {
-  const params = new URLSearchParams();
-  if (resuelta !== undefined) params.set("resuelta", resuelta);
-  if (nodo_id) params.set("nodo_id", nodo_id);
-  const data = await get(`/api/v1/alertas?${params}`, token);
-  return data.alertas; // array
+export async function fetchAlertas({ resuelta, nodo_id } = {}) {
+  const params = {};
+  if (resuelta !== undefined) params.resuelta = resuelta;
+  if (nodo_id) params.nodo_id = nodo_id;
+  const { data } = await api.get("/alertas", { params });
+  return data.alertas;
 }
 
-// PUT /api/v1/alertas/:id/resolver
-export async function resolverAlerta(token, alertaId) {
-  return put(`/api/v1/alertas/${alertaId}/resolver`, token);
+export async function resolverAlerta(alertaId) {
+  const { data } = await api.put(`/alertas/${alertaId}/resolver`);
+  return data;
 }
 
 // ── Muestras ──────────────────────────────────────────
 
-// GET /api/v1/muestras?nodo_id=xxx&limit=50
-export async function fetchMuestras(token, { nodo_id, limit = 10 } = {}) {
-  const params = new URLSearchParams();
-  if (nodo_id) params.set("nodo_id", nodo_id);
-  params.set("limit", limit);
-  const data = await get(`/api/v1/muestras?${params}`, token);
-  return data.muestras; // array
+export async function fetchMuestras({ nodo_id, limit = 10 } = {}) {
+  const params = { limit };
+  if (nodo_id) params.nodo_id = nodo_id;
+  const { data } = await api.get("/muestras", { params });
+  return data.muestras;
 }
 
-// POST /api/v1/muestras
-export async function registrarMuestra(token, { nodo_id, valores, nota = "" }) {
-  return post("/api/v1/muestras", token, { nodo_id, valores, nota });
+export async function registrarMuestra({ nodo_id, valores, nota = "" }) {
+  const { data } = await api.post("/muestras", { nodo_id, valores, nota });
+  return data;
 }
 
-// PUT /api/v1/muestras/:id/nota
-export async function actualizarNota(token, muestraId, nota) {
-  return put(`/api/v1/muestras/${muestraId}/nota`, token, { nota });
+export async function actualizarNota(muestraId, nota) {
+  const { data } = await api.put(`/muestras/${muestraId}/nota`, { nota });
+  return data;
 }
 
+// ── Reportes ──────────────────────────────────────────
+
+export async function fetchReportes() {
+  const { data } = await api.get('/reportes');
+  return data.reportes; // [{ id, fecha, cumple_nom, creado_en, mac, ubicacion, generado_por }]
+}
+
+export async function generarReporte({ nodo_id, fecha_inicio, fecha_fin }) {
+  // El backend responde con application/pdf — necesitamos responseType: 'blob'
+  const response = await api.post(
+    '/reportes/generar',
+    { nodo_id, fecha_inicio, fecha_fin },
+    { responseType: 'blob' }
+  );
+  return {
+    blob: response.data,
+    reporteId: response.headers['x-reporte-id'],
+    cumpleNom: response.headers['x-cumple-nom'] === 'true',
+  };
+}
+
+export async function descargarPdfReporte(id) {
+  const response = await api.get(`/reportes/${id}/pdf`, { responseType: 'blob' });
+  return response.data; // Blob PDF
+}
+
+// Exportar la instancia base por si se necesita directamente (ej. para login)
+export default api;

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer,
@@ -18,17 +19,27 @@ const CustomTooltip = ({ active, payload, unit }) => {
 };
 
 export default function ParameterCard({ param, history, currentValue, onExpand, disabled }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const limits = NOM_127_LIMITS[param];
-  const color  = disabled ? "#94a3b8" : PARAM_COLORS[param]; // Slate-400 if disabled
-  const isOut  = disabled ? false : (currentValue < limits.min || currentValue > limits.max);
-  const yMin   = history.length ? Math.min(...history.map((d) => d.value)) * 0.95 : 0;
-  const yMax   = history.length ? Math.max(...history.map((d) => d.value)) * 1.05 : 10;
+  const color = disabled ? "#94a3b8" : PARAM_COLORS[param]; // Slate-400 if disabled
+  const isOut = disabled ? false : (currentValue < limits.min || currentValue > limits.max);
+  
+  // Calcular los límites basándose en todo el historial para evitar saltos en el eje Y
+  const yMin = history.length ? Math.min(...history.map((d) => d.value)) * 0.95 : 0;
+  const yMax = history.length ? Math.max(...history.map((d) => d.value)) * 1.05 : 10;
+
+  // Renderizar sin datos en el primer frame para detonar la animación de Recharts
+  const chartData = isMounted ? history : [];
 
   return (
     <div
-      className={`card-hover p-5 cursor-pointer group relative flex flex-col h-full ${
-        isOut ? "border-red-300 bg-red-50/30" : ""
-      }`}
+      className={`card-hover p-5 cursor-pointer group relative flex flex-col h-full ${isOut ? "border-red-300 bg-red-50/30" : ""
+        }`}
       onClick={onExpand}
       title="Clic para ver historial completo"
     >
@@ -62,36 +73,36 @@ export default function ParameterCard({ param, history, currentValue, onExpand, 
 
       <div className="flex-1 min-h-[90px] w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={history} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <LineChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" />
-          <XAxis
-            dataKey="time"
-            tick={{ fill: "#cbd5e1", fontSize: 9, fontFamily: "DM Sans" }}
-            tickLine={false}
-            interval={5}
-          />
-          <YAxis
-            domain={[yMin, yMax]}
-            tick={{ fill: "#cbd5e1", fontSize: 9 }}
-            tickLine={false}
-            tickFormatter={(val) => val.toFixed(2)}
-            width={35}
-          />
-          <Tooltip content={<CustomTooltip unit={limits.unit} />} />
-          {limits.max < 9999 && (
-            <ReferenceLine y={limits.max} stroke="#fca5a5" strokeDasharray="4 4" strokeWidth={1.5} />
-          )}
-          {limits.min > 0 && (
-            <ReferenceLine y={limits.min} stroke="#fcd34d" strokeDasharray="4 4" strokeWidth={1.5} />
-          )}
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke={color}
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{ r: 4, fill: color, stroke: "#fff", strokeWidth: 2 }}
-          />
+            <XAxis
+              dataKey="time"
+              tick={{ fill: "#cbd5e1", fontSize: 9, fontFamily: "DM Sans" }}
+              tickLine={false}
+              interval={5}
+            />
+            <YAxis
+              domain={[yMin, yMax]}
+              tick={{ fill: "#cbd5e1", fontSize: 9 }}
+              tickLine={false}
+              tickFormatter={(val) => val.toFixed(2)}
+              width={35}
+            />
+            <Tooltip content={<CustomTooltip unit={limits.unit} />} />
+            {limits.max < 9999 && (
+              <ReferenceLine y={limits.max} stroke="#fca5a5" strokeDasharray="4 4" strokeWidth={1.5} />
+            )}
+            {limits.min > 0 && (
+              <ReferenceLine y={limits.min} stroke="#fcd34d" strokeDasharray="4 4" strokeWidth={1.5} />
+            )}
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, fill: color, stroke: "#fff", strokeWidth: 2 }}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>

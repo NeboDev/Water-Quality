@@ -7,7 +7,7 @@ const STATUS_DOT = {
   inactivo: "#94a3b8",
 };
 
-export default function NodoConfig({ token, nodes, onClose, onNodesChanged }) {
+export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
   const [selected, setSelected] = useState(nodes[0] ?? null);
   const [form, setForm] = useState({ ubicacion: "", version_fw: "", activo: true });
   const [saving, setSaving] = useState(false);
@@ -35,7 +35,7 @@ export default function NodoConfig({ token, nodes, onClose, onNodesChanged }) {
     setSaving(true);
     setMsg(null);
     try {
-      const res = await editarNodo(token, selected.id, {
+      const res = await editarNodo(selected.id, {
         ubicacion:  form.ubicacion.trim() || undefined,
         version_fw: form.version_fw.trim() || undefined,
         activo:     form.activo,
@@ -54,7 +54,7 @@ export default function NodoConfig({ token, nodes, onClose, onNodesChanged }) {
     setDeleting(true);
     setMsg(null);
     try {
-      await eliminarNodo(token, selected.id);
+      await eliminarNodo(selected.id);
       onNodesChanged?.(null, selected.id); // null = deleted
       const remaining = nodes.filter((n) => n.id !== selected.id);
       if (remaining.length > 0) setSelected(remaining[0]);

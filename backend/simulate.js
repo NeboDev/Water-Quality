@@ -28,20 +28,14 @@ client.on('connect', async () => {
 
     console.log(`Iniciando simulación para ${nodos.length} nodos:`, nodos);
 
-    // Publicar telemetría cada 5 segundos
+    // Publicar telemetría 
     setInterval(() => {
       nodos.forEach(mac => {
-        // Generar valores cercanos a los límites NOM-127 para ver variación
         const payload = {
-          // pH ideal: 6.5 - 8.5
           ph: Number((Math.random() * 4 + 5.5).toFixed(2)),
-          // Temp: 15.0 - 30.0
           temperatura: Number((Math.random() * 15 + 15).toFixed(2)),
-          // Conductividad ideal: < 1500
           conductividad: Math.floor(Math.random() * 1000 + 500),
-          // Turbidez ideal: < 5
           turbidez: Number((Math.random() * 6).toFixed(2)),
-          // TDS ideal: < 1000
           tds: Math.floor(Math.random() * 600 + 200)
         };
 
@@ -49,10 +43,10 @@ client.on('connect', async () => {
         client.publish(topic, JSON.stringify(payload));
         console.log(`[${mac}] Publicado:`, payload);
       });
-    }, 20000);
+    }, 5000);
 
   } catch (err) {
-    console.error(' Error al conectar con la base de datos:', err);
+    console.error('Error al conectar con la base de datos:', err);
     process.exit(1);
   }
 });

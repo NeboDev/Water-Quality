@@ -1,10 +1,11 @@
+import { useState, useEffect } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer, Legend,
 } from "recharts";
 import { PARAMS, NOM_127_LIMITS, PARAM_COLORS } from "../constants";
 
-// Paleta de colores para los nodos (no los parámetros)
+// node colors... we can add more in case of more nodes
 const NODE_PALETTE = [
   "#6366f1", // indigo
   "#f59e0b", // amber
@@ -18,24 +19,30 @@ const NODE_PALETTE = [
   "#a3e635", // lime
 ];
 
-// Merge all nodes' history for a given param into a unified timeline
-// Output: [{ time, node0_id: val, node1_id: val, ... }, ...]
+// Max data points shown on the X axis in the Overview charts
+const OVERVIEW_POINTS = 10;
+
+// Merge all nodes' history for a given param into a unified timeline.
+// Agrupamos usando la cadena exacta de tiempo (HH:MM:SS) generada por el frontend.
 function buildMultiNodeData(nodes, param) {
-  // Collect all unique timestamps across all active nodes
-  const timeMap = {}; // time -> { [nodeKey]: value }
+  const timeMap = {};
 
   nodes.forEach((node, idx) => {
     if (!node.history?.[param]) return;
-    const key = `node_${idx}`;
     node.history[param].forEach((point) => {
-      if (!timeMap[point.time]) timeMap[point.time] = { time: point.time };
-      timeMap[point.time][key] = point.value;
+      // Usamos el string del tiempo como llave 
+      // Esto evita colisiones matemáticas y respeta el ritmo real de los datos.
+      const bucketKey = point.time;
+      if (!timeMap[bucketKey]) {
+        timeMap[bucketKey] = { _ts: point.timestamp, time: point.time };
+      }
+      timeMap[bucketKey][`node_${idx}`] = point.value;
     });
   });
 
-  return Object.values(timeMap).sort((a, b) =>
-    a.time.localeCompare(b.time)
-  );
+  // Sort chronologically, keep only the last OVERVIEW_POINTS buckets
+  const sorted = Object.values(timeMap).sort((a, b) => a._ts - b._ts);
+  return sorted.slice(-OVERVIEW_POINTS);
 }
 
 const CustomTooltip = ({ active, payload, label, nodes, unit }) => {
@@ -65,11 +72,15 @@ const CustomTooltip = ({ active, payload, label, nodes, unit }) => {
 };
 
 function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canResolve }) {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   const limits = NOM_127_LIMITS[param];
   const paramColor = PARAM_COLORS[param];
 
   const activeNodes = nodes.filter((n) => n.history?.[param]);
   const data = buildMultiNodeData(activeNodes, param);
+  const chartData = isMounted ? data : [];
 
   // Check if any node has an out-of-range value for this param
   const hasAlert = globalAlerts?.some((a) => a.parametro === param);
@@ -119,8 +130,8 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
       {/* Chart */}
       <div className="flex-1 min-h-[120px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" />
+          <LineChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <CartesianGrid stroke="#f1f5f9" strokeDasharray="5 5" />
             <XAxis
               dataKey="time"
               tick={{ fill: "#cbd5e1", fontSize: 9, fontFamily: "DM Sans" }}
@@ -173,29 +184,61 @@ export default function Overview({ nodes, globalAlerts, onResolveAlert, canResol
 
       {/* Param cards grid */}
       <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar pr-2 pb-4">
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-[minmax(0,1fr)]">
-          {PARAMS.filter(p => p !== 'conductividad').map((param) => (
-            <MultiNodeParamCard
-              key={param}
-              param={param}
-              nodes={nodesWithHistory}
-              globalAlerts={globalAlerts}
-              onResolveAlert={onResolveAlert}
-              canResolve={canResolve}
-            />
-          ))}
-
-          {/* Conductividad spans 2 columns */}
-          <div className="lg:col-span-2 xl:col-span-2 h-full">
-            <MultiNodeParamCard
-              param="conductividad"
-              nodes={nodesWithHistory}
-              globalAlerts={globalAlerts}
-              onResolveAlert={onResolveAlert}
-              canResolve={canResolve}
-            />
+        {nodes.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col items-center gap-3 text-slate-400">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1-8h-2V7h2v2z" fill="currentColor" />
+              </svg>
+              <p className="text-sm">No hay nodos registrados para mostrar métricas conjuntas.</p>
+            </div>
           </div>
-        </div>
+        ) : nodesWithHistory.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
+            <div className="flex flex-col items-center gap-4 max-w-xs text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <rect x="4" y="8" width="24" height="18" rx="3" stroke="#94a3b8" strokeWidth="1.5" />
+                  <path d="M10 14h12M10 19h7" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="24" cy="8" r="4" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5" />
+                  <path d="M22.5 8h3M24 6.5v3" stroke="#94a3b8" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-700 mb-1">
+                  Sin datos disponibles
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Ninguno de los nodos registrados ha enviado registros de telemetría. Se mostrarán las métricas en cuando haya datos disponibles.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-[minmax(0,1fr)]">
+            {PARAMS.filter(p => p !== 'conductividad').map((param) => (
+              <MultiNodeParamCard
+                key={param}
+                param={param}
+                nodes={nodesWithHistory}
+                globalAlerts={globalAlerts}
+                onResolveAlert={onResolveAlert}
+                canResolve={canResolve}
+              />
+            ))}
+
+            {/* Conductividad spans 2 columns */}
+            <div className="lg:col-span-2 xl:col-span-2 h-full">
+              <MultiNodeParamCard
+                param="conductividad"
+                nodes={nodesWithHistory}
+                globalAlerts={globalAlerts}
+                onResolveAlert={onResolveAlert}
+                canResolve={canResolve}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Alertas Side Panel */}

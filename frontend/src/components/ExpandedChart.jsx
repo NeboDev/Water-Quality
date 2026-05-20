@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload, unit }) => {
   );
 };
 
-export default function ExpandedChart({ param, token, nodeId, nodeName, latestTimestamp, onClose, disabled }) {
+export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp, onClose, disabled }) {
   const limits = NOM_127_LIMITS[param];
   const color  = disabled ? "#94a3b8" : PARAM_COLORS[param];
   
@@ -34,7 +34,7 @@ export default function ExpandedChart({ param, token, nodeId, nodeName, latestTi
       setLoading(true);
       setError("");
       try {
-        const rawTelemetry = await fetchTelemetria(token, nodeId, 30);
+        const rawTelemetry = await fetchTelemetria(nodeId, 30);
         if (!active) return;
         
         const historyObj = buildHistory(rawTelemetry);
@@ -48,7 +48,7 @@ export default function ExpandedChart({ param, token, nodeId, nodeName, latestTi
     loadData();
     
     return () => { active = false; };
-  }, [token, nodeId, param]);
+  }, [nodeId, param]);
 
   const outOfRange = data.filter((d) => d.value < limits.min || d.value > limits.max).length;
   const avg   = data.length ? (data.reduce((s, d) => s + d.value, 0) / data.length).toFixed(2) : "—";

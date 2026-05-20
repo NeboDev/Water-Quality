@@ -16,13 +16,12 @@ export const PARAM_COLORS = {
 
 export const PARAMS = ["ph", "turbidez", "conductividad", "temperatura", "tds"];
 
-// Convert a raw telemetry entry into chart-friendly { time, value }
 export function telemetryToPoint(entry, param) {
   const d = new Date(entry.timestamp);
   return {
-    time: d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }),
+    time: d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
     date: d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }),
-    fullLabel: d.toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+    fullLabel: d.toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }),
     value: entry.valores[param],
     timestamp: d.getTime(),
   };
