@@ -6,6 +6,7 @@ import StatusBar from "./components/StatusBar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ExpandedChart from "./components/ExpandedChart";
+import MultiNodeExpandedChart from "./components/MultiNodeExpandedChart";
 import NodoForm from "./components/NodoForm";
 import UsuarioForm from "./components/UsuarioForm";
 import NodoConfig from "./components/NodoConfig";
@@ -78,6 +79,7 @@ export default function App() {
 
   // Expanded chart modal
   const [expandedParam, setExpandedParam] = useState(null); // param key or null
+  const [expandedOverviewParam, setExpandedOverviewParam] = useState(null);
   const [showNodoForm, setShowNodoForm] = useState(false);
   const [showUsuarioForm, setShowUsuarioForm] = useState(false);
   const [showNodoConfig, setShowNodoConfig] = useState(false);
@@ -342,6 +344,7 @@ export default function App() {
                 console.error(e);
               }
             }}
+            onExpandParam={setExpandedOverviewParam}
           />
         )}
 
@@ -374,6 +377,15 @@ export default function App() {
           latestTimestamp={selectedNode.timestamp}
           onClose={() => setExpandedParam(null)}
           disabled={selectedNode.status === "inactivo"}
+        />
+      )}
+
+      {/* Multi-node comparative chart modal */}
+      {expandedOverviewParam && (
+        <MultiNodeExpandedChart
+          param={expandedOverviewParam}
+          nodes={nodes}
+          onClose={() => setExpandedOverviewParam(null)}
         />
       )}
 

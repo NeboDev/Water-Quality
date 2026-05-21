@@ -137,7 +137,7 @@ export default function Reportes({ nodes }) {
 
   //render
   return (
-    <div className="flex-1 w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-5 overflow-hidden min-h-0">
+    <div className="flex-1 w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-5 overflow-y-auto lg:overflow-hidden min-h-0">
 
       {/* ── Left panel: form ── */}
       <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-4">
@@ -274,7 +274,7 @@ export default function Reportes({ nodes }) {
       </div>
 
       {/* ── Right panel: list ── */}
-      <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm min-h-0">
+      <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm min-h-[400px] lg:min-h-0">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
@@ -300,7 +300,7 @@ export default function Reportes({ nodes }) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-auto custom-scrollbar">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="flex flex-col items-center gap-3 text-slate-400">

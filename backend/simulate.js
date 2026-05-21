@@ -10,8 +10,11 @@ const pool = new Pool({
   port: 5432,
 });
 
-// Conexión al broker MQTT local
-const client = mqtt.connect('mqtt://localhost:1883');
+// Conexión al broker MQTT local con credenciales
+const client = mqtt.connect('mqtt://localhost:1883', {
+  username: 'simulador',
+  password: 'simulador123',
+});
 
 client.on('connect', async () => {
   console.log('Simulador conectado a MQTT');
@@ -32,11 +35,13 @@ client.on('connect', async () => {
     setInterval(() => {
       nodos.slice(0, 2).forEach(mac => {
         const payload = {
-          ph: Number((Math.random() * 4 + 5.5).toFixed(2)),
-          temperatura: Number((Math.random() * 15 + 15).toFixed(2)),
-          conductividad: Math.floor(Math.random() * 1000 + 500),
-          turbidez: Number((Math.random() * 6).toFixed(2)),
-          tds: Math.floor(Math.random() * 600 + 200)
+          valores: {
+            ph: Number((Math.random() * 4 + 5.5).toFixed(2)),
+            temperatura: Number((Math.random() * 15 + 15).toFixed(2)),
+            conductividad: Math.floor(Math.random() * 1000 + 500),
+            turbidez: Number((Math.random() * 6).toFixed(2)),
+            tds: Math.floor(Math.random() * 600 + 200)
+          }
         };
 
         const topic = `nodo/${mac}/telemetria`;
@@ -48,11 +53,13 @@ client.on('connect', async () => {
     setInterval(() => {
       nodos.slice(2, 4).forEach(mac => {
         const payload = {
-          ph: Number((Math.random() * 4 + 5.5).toFixed(2)),
-          temperatura: Number((Math.random() * 15 + 15).toFixed(2)),
-          conductividad: Math.floor(Math.random() * 1000 + 500),
-          turbidez: Number((Math.random() * 6).toFixed(2)),
-          tds: Math.floor(Math.random() * 600 + 200)
+          valores: {
+            ph: Number((Math.random() * 4 + 5.5).toFixed(2)),
+            temperatura: Number((Math.random() * 15 + 15).toFixed(2)),
+            conductividad: Math.floor(Math.random() * 1000 + 500),
+            turbidez: Number((Math.random() * 6).toFixed(2)),
+            tds: Math.floor(Math.random() * 600 + 200)
+          }
         };
 
         const topic = `nodo/${mac}/telemetria`;
