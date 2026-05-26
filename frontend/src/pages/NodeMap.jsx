@@ -196,7 +196,14 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
         const m = markersRef.current[node.id];
         m.setIcon(icon);
         m.setLatLng(latLng);
-        m.options.draggable !== isDraggable && (isDraggable ? m.dragging.enable() : m.dragging.disable());
+        if (m.dragging && m.options.draggable !== isDraggable) {
+          if (isDraggable) {
+            m.dragging.enable();
+          } else {
+            m.dragging.disable();
+          }
+          m.options.draggable = isDraggable;
+        }
         m.getPopup()?.setContent(buildPopupHTML(node, color));
       } else {
         // Create new marker

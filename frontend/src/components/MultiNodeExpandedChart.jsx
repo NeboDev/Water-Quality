@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer,
@@ -47,11 +47,11 @@ const CustomTooltip = ({ active, payload, nodeNames, unit }) => {
   );
 };
 
-// Merge multiple node histories into a single chronological timeline.
+// unir el historial de multiples nodos en una unica linea del tiempo
 function mergeHistories(nodesHistories, param) {
   const timeMap = {};
 
-  // 1. Collect all unique time buckets across all nodes
+  // recolectar todos los puntos de todos los nodos en el tiempo 
   nodesHistories.forEach(({ history }) => {
     history.forEach((point) => {
       const bucketKey = point.fullLabel || point.time;
@@ -65,10 +65,10 @@ function mergeHistories(nodesHistories, param) {
     });
   });
 
-  // 2. Sort chronologically
+  // ordenar cronologicamente
   const sortedBuckets = Object.values(timeMap).sort((a, b) => a._ts - b._ts);
 
-  // 3. For each node, propagate values
+  // propagtar valores para cada nodo
   nodesHistories.forEach(({ history }, idx) => {
     const valsByTime = {};
     history.forEach((point) => {
@@ -97,91 +97,65 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
   const limits = NOM_127_LIMITS[param];
   const paramColor = PARAM_COLORS[param];
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [chartData, setChartData] = useState([]);
-  const [nodeStats, setNodeStats] = useState([]);
-
-  // Filters nodes that are active/available
-  const activeNodes = nodes.filter((n) => !n.sinDatos);
-
+  const [hasAnimated, setHasAnimated] = useState(false);
   useEffect(() => {
-    let active = true;
-    const loadAllTelemetry = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const promises = activeNodes.map(async (node) => {
-          try {
-            // Load the last 10 samples
-            const rawTelemetry = await fetchTelemetria(node.id, 10);
-            const historyObj = buildHistory(rawTelemetry);
-            const history = historyObj[param] || [];
-            return { node, history };
-          } catch (err) {
-            console.error(`Error loading telemetry for node ${node.id}:`, err);
-            return { node, history: [] };
-          }
-        });
+    const timer = setTimeout(() => setHasAnimated(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
-        const results = await Promise.all(promises);
+  // filtrar nodos no activos/disponibles
+  const activeNodes = useMemo(() => {
+    return nodes.filter((n) => !n.sinDatos && n.history?.[param] && n.history[param].length > 0);
+  }, [nodes, param]);
 
-        if (!active) return;
+  const resultsWithData = useMemo(() => {
+    return activeNodes.map((node) => {
+      // slice the last 10 points for the comparative chart
+      const history = (node.history?.[param] || []).slice(-10);
+      return { node, history };
+    }).filter((r) => r.history.length > 0);
+  }, [activeNodes, param]);
 
-        // Clean out nodes that returned no history
-        const resultsWithData = results.filter((r) => r.history.length > 0);
+  const chartData = useMemo(() => {
+    return mergeHistories(resultsWithData, param);
+  }, [resultsWithData, param]);
 
-        if (resultsWithData.length === 0) {
-          setError("No se encontraron muestras de telemetría recientes para los nodos.");
-          setLoading(false);
-          return;
-        }
+  const nodeStats = useMemo(() => {
+    return resultsWithData.map(({ node, history }, idx) => {
+      const values = history.map((h) => h.value);
+      const current = values[values.length - 1];
+      const avg = values.length ? values.reduce((s, v) => s + v, 0) / values.length : 0;
+      const min = values.length ? Math.min(...values) : 0;
+      const max = values.length ? Math.max(...values) : 0;
+      const outOfNorm = values.filter((v) => v < limits.min || v > limits.max).length;
 
-        // Merge histories for Recharts
-        const merged = mergeHistories(resultsWithData, param);
-        setChartData(merged);
+      return {
+        id: node.id,
+        name: node.ubicacion || node.node_id,
+        color: NODE_PALETTE[idx % NODE_PALETTE.length],
+        current,
+        avg,
+        min,
+        max,
+        outOfNorm
+      };
+    });
+  }, [resultsWithData, limits]);
 
-        // Compute statistics for each node
-        const stats = resultsWithData.map(({ node, history }, idx) => {
-          const values = history.map((h) => h.value);
-          const current = values[values.length - 1];
-          const avg = values.reduce((s, v) => s + v, 0) / values.length;
-          const min = Math.min(...values);
-          const max = Math.max(...values);
-          const outOfNorm = values.filter((v) => v < limits.min || v > limits.max).length;
+  const error = resultsWithData.length === 0
+    ? "No se encontraron muestras de telemetría recientes para los nodos."
+    : "";
 
-          return {
-            id: node.id,
-            name: node.ubicacion || node.node_id,
-            color: NODE_PALETTE[idx % NODE_PALETTE.length],
-            current,
-            avg,
-            min,
-            max,
-            outOfNorm
-          };
-        });
-        setNodeStats(stats);
-      } catch (err) {
-        if (active) setError(err.message || "Error al cargar el historial comparativo.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
+  const loading = false;
 
-    loadAllTelemetry();
-
-    return () => { active = false; };
-  }, [param, nodes]);
-
-  // Close on Escape key
+  // cerrar con escape
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Gather Y-axis bounds
+  // eje y
   const allYVals = chartData.flatMap((d) =>
     nodeStats.map((_, idx) => d[`node_${idx}`]).filter((v) => v !== undefined)
   );
@@ -220,9 +194,9 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
           </button>
         </div>
 
-        {/* Content Area */}
+        {/* area de contenido */}
         <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-6 min-h-0 gap-6">
-          {/* Main loader and error overlays */}
+          {/* carga y sincronizacion */}
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <span className="w-8 h-8 border-4 border-slate-200 border-t-buap-600 rounded-full animate-spin" />
@@ -238,7 +212,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
 
           {!loading && !error && (
             <>
-              {/* Responsive comparison stats grid / table */}
+              {/* tabla de comparacion */}
               <div className="w-full overflow-x-auto border border-slate-100 rounded-2xl">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
@@ -296,7 +270,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
                 </table>
               </div>
 
-              {/* Chart container */}
+              {/* contenedor de grafica*/}
               <div className="flex-1 flex flex-col min-h-[300px]">
                 <div className="flex items-center justify-between mb-3 text-xs text-slate-400 font-medium">
                   <p>Normativa NOM-127: {limits.min} – {limits.max} {limits.unit || "—"}</p>
@@ -353,6 +327,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
                           dot={false}
                           activeDot={{ r: 5, fill: stat.color, stroke: "#fff", strokeWidth: 2 }}
                           connectNulls
+                          isAnimationActive={!hasAnimated}
                         />
                       ))}
                     </LineChart>

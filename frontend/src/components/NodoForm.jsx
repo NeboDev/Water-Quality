@@ -5,7 +5,7 @@ import InputField from "./common/InputField";
 import Alert from "./common/Alert";
 import SuccessState from "./common/SuccessState";
 
-// ── Validaciones simples en cliente ──────────────────
+// validaciones del lado del cliente
 const MAC_REGEX = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
 
 export default function NodoForm({ onSuccess, onClose }) {
@@ -103,7 +103,7 @@ export default function NodoForm({ onSuccess, onClose }) {
             error={errors.ubicacion}
           />
 
-          {/* Opciones avanzadas */}
+          {/* Opciones avanzadas (por ahora unicamente la version del fw que no lo veia necesario pero weno) */}
           <div className="border-t border-slate-100 pt-3.5 mt-1">
             <button
               type="button"
@@ -120,9 +120,8 @@ export default function NodoForm({ onSuccess, onClose }) {
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`transition-transform duration-200 ${
-                  showAdvanced ? "rotate-180 text-buap-500" : "text-slate-400"
-                }`}
+                className={`transition-transform duration-200 ${showAdvanced ? "rotate-180 text-buap-500" : "text-slate-400"
+                  }`}
               >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>

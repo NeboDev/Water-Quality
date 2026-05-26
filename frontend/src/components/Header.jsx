@@ -22,7 +22,6 @@ const ROLE_LABEL = {
   admin: "Admin", icuap: "ICUAP", operador: "Operador", visualizador: "Visualizador",
 };
 
-// ── Hook reutilizable para cerrar menú al click externo ──
 function useClickOutside(ref, onClose) {
   useEffect(() => {
     const handler = (e) => {
@@ -138,7 +137,7 @@ export default function Header({
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${isSel ? "bg-buap-50 ring-1 ring-inset ring-buap-200" : "hover:bg-slate-50"
                           }`}
                       >
-                        {/* Status indicator */}
+                        {/* indicador de estado del nodo */}
                         <div className="flex-shrink-0 flex flex-col items-center gap-1">
                           <span
                             className={`w-2.5 h-2.5 rounded-full ${node.status === "activo" ? "animate-pulse-dot" : ""}`}
@@ -178,10 +177,10 @@ export default function Header({
                   })}
                 </div>
 
-                {/* Footer: configurar + registrar */}
+
                 <div className="border-t border-slate-100 px-2 py-2 flex flex-col gap-1">
 
-                  {/* Configuración de nodos */}
+                  {/* conexion al endpoint de configuracion de nodos */}
                   <button
                     disabled={!canConfigNodes}
                     onClick={() => { if (canConfigNodes) { setNodeMenuOpen(false); onConfigNodes(); } }}
@@ -209,7 +208,7 @@ export default function Header({
                     </div>
                   </button>
 
-                  {/* Registrar nuevo nodo */}
+                  {/* add node */}
                   <button
                     disabled={!canAddNode}
                     onClick={() => { if (canAddNode) { setNodeMenuOpen(false); onAddNode(); } }}
@@ -245,7 +244,7 @@ export default function Header({
 
 
 
-      {/* ── View toggle ── */}
+      {/* toggle para pantallas pequenias*/}
       {(() => {
         const viewOptions = [
           {
@@ -279,7 +278,7 @@ export default function Header({
               </svg>
             ),
           },
-          // Reportes — solo visible para admin / icuap
+          // Reportes: solo visible para admin / icuap
           ...(canViewReports ? [{
             id: "reportes", title: "Reportes",
             icon: (
@@ -311,7 +310,7 @@ export default function Header({
               ))}
             </div>
 
-            {/* Mobile View Hamburger */}
+            {/* Mobile View*/}
             <div className="relative md:hidden flex-shrink-0" ref={mobileMenuRef}>
               <button
                 onClick={() => setMobileMenuOpen((v) => !v)}
@@ -364,7 +363,7 @@ export default function Header({
 
       <div className="hidden sm:block w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
 
-      {/* ── Global Alerts Bell ── */}
+      {/* campana de alertas */}
       <button
         onClick={() => setShowGlobalAlerts(true)}
         className="relative p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
@@ -381,7 +380,7 @@ export default function Header({
         )}
       </button>
 
-      {/* ── User menu ── */}
+      {/* menu del usuario*/}
       {user && (
         <div className="relative flex-shrink-0" ref={userRef}>
           <button

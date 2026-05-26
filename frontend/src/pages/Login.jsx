@@ -1,36 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { login } from "../api";
 import WaterRippleGL from "../components/WaterRippleGL";
-
-const FEATURES = [
-  {
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm1 5a1 1 0 00-1 1v2a1 1 0 001 1h12a1 1 0 001-1v-2a1 1 0 00-1-1H4z" clipRule="evenodd" />
-      </svg>
-    ),
-    title: "Telemetría en tiempo real",
-    desc: "pH, turbidez, conductividad, temperatura y TDS con actualización continua.",
-  },
-  {
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
-      </svg>
-    ),
-    title: "Cumplimiento NOM-127",
-    desc: "Validación automática de parámetros contra la norma oficial mexicana.",
-  },
-  {
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-      </svg>
-    ),
-    title: "Red de nodos IoT",
-    desc: "Monitoreo distribuido 24/7 en los depósitos de Ciudad Universitaria.",
-  },
-];
 
 export default function Login({ onLogin, onGoRegister }) {
   const [usuario, setUsuario] = useState("");
@@ -39,6 +9,13 @@ export default function Login({ onLogin, onGoRegister }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const rippleRef = useRef(null); // ref al effect de ripple 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,194 +40,159 @@ export default function Login({ onLogin, onGoRegister }) {
   const canSubmit = usuario.trim() && password.trim() && !loading;
 
   return (
-    <div className="min-h-screen flex">
-      {/*left panel */}
-      <div className="hidden lg:flex w-[420px] flex-shrink-0 bg-buap-900 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-white/[0.03]" />
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-white/[0.03]" />
-
-        <div className="relative z-10 flex flex-col gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 2C11 10 5 13 5 21a11 11 0 0022 0c0-8-6-11-11-19z" fill="rgba(255,255,255,0.9)" />
-              <circle cx="16" cy="21" r="4" fill="rgba(255,255,255,0.2)" />
-              <circle cx="16" cy="21" r="2" fill="rgba(255,255,255,0.6)" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Kanan</h1>
-            <p className="text-sm text-white/55 mt-1 leading-relaxed">
-              Sistema de monitoreo de calidad del agua
-            </p>
-          </div>
-        </div>
-
-        <div className="relative z-10 flex flex-col gap-6">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="flex items-start gap-4">
-              <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-buap-300 flex-shrink-0 mt-0.5">
-                {f.icon}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white/85">{f.title}</p>
-                <p className="text-xs text-white/45 mt-0.5 leading-relaxed">{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="relative z-10">
-          <p className="text-xs text-white/30 leading-relaxed">
-            Benemérita Universidad Autónoma de Puebla<br />
-          </p>
-        </div>
-      </div>
-
-      {/* right panel */}
-      <div
-        className="flex-1 relative overflow-hidden"
-        onMouseMove={(e) => rippleRef.current?.addRipple(e.clientX, e.clientY)}
-        onTouchMove={(e) => {
-          e.preventDefault();
-          const t = e.touches[0];
-          rippleRef.current?.addRipple(t.clientX, t.clientY);
-        }}
-        style={{ touchAction: "none" }}
-      >
-
-        {/* WebGL water background */}
+    <div
+      className="min-h-screen w-full relative overflow-hidden flex flex-col md:flex-row bg-slate-50 select-none"
+      onMouseMove={(e) => rippleRef.current?.addRipple(e.clientX, e.clientY)}
+      onTouchMove={(e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        rippleRef.current?.addRipple(t.clientX, t.clientY);
+      }}
+      style={{ touchAction: "none" }}
+    >
+      {/* WebGL water background */}
+      {!isMobile && (
         <div className="absolute inset-0 pointer-events-none">
           <WaterRippleGL ref={rippleRef} className="w-full h-full" />
         </div>
+      )}
 
-        {/* form content */}
-        <div className="relative z-10 flex items-center justify-center min-h-full px-6 py-10">
-          <div className="w-full max-w-sm animate-fade-in">
-
-            {/* mobile logo */}
-            <div className="lg:hidden flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-buap-900 flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                  <path d="M16 2C11 10 5 13 5 21a11 11 0 0022 0c0-8-6-11-11-19z" fill="white" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-buap-900">Kanan</span>
-            </div>
-
-            <div className="card p-8 shadow-card-lg backdrop-blur-sm bg-white/90">
-              <div className="mb-7">
-                <h2 className="text-xl font-bold text-buap-900 tracking-tight">Iniciar sesión</h2>
-                <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
-                  Ingresa tus credenciales para acceder al sistema de monitoreo.
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
-                {/* email */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="label-sm" htmlFor="usuario-input">Correo electrónico</label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 text-slate-400 pointer-events-none">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                        <path d="M2 5.5l6 4 6-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                      </svg>
-                    </span>
-                    <input
-                      id="usuario-input"
-                      type="email"
-                      value={usuario}
-                      onChange={(e) => { setUsuario(e.target.value); setError(""); }}
-                      placeholder="correo@ejemplo.com"
-                      className="input-base pl-10"
-                      autoComplete="email"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                {/* password */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="label-sm" htmlFor="password-input">Contraseña</label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 text-slate-400 pointer-events-none">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.3" />
-                        <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                        <circle cx="8" cy="11" r="1.2" fill="currentColor" />
-                      </svg>
-                    </span>
-                    <input
-                      id="password-input"
-                      type={showPass ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                      placeholder="••••••••"
-                      className="input-base pl-10 pr-11"
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass((v) => !v)}
-                      className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded"
-                      tabIndex={-1}
-                    >
-                      {showPass ? (
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
-                          <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
-                          <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                        </svg>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
-                          <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* errors */}
-                {error && (
-                  <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium animate-shake">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
-                      <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-                      <line x1="7" y1="4" x2="7" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                      <circle cx="7" cy="10" r="0.8" fill="currentColor" />
-                    </svg>
-                    {error}
-                  </div>
-                )}
-
-                {/* submit buttonn */}
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className="btn-primary h-11 justify-center mt-1"
-                >
-                  {loading ? (
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin-slow" />
-                  ) : (
-                    <>
-                      Iniciar sesión
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            <p className="text-center text-sm text-slate-600 mt-5">
-              ¿No tienes cuenta?{" "}
-              <button onClick={onGoRegister} className="text-buap-700 font-semibold hover:underline">
-                Regístrate
-              </button>
+      {/* Panel Izquierdo: Branding */}
+      <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center md:justify-end p-8 md:pr-12 lg:pr-24 animate-fade-in">
+        <div className="flex flex-row items-center justify-center md:justify-start gap-4 md:gap-6 lg:gap-8 w-full max-w-md lg:max-w-lg">
+          <div className="flex-shrink-0 w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-2xl md:rounded-[2rem] bg-buap-900 flex items-center justify-center shadow-2xl border border-white/20 backdrop-blur-md">
+            <svg viewBox="0 0 32 32" fill="none" className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+              <path d="M16 2C11 10 5 13 5 21a11 11 0 0022 0c0-8-6-11-11-19z" fill="white" />
+            </svg>
+          </div>
+          <div className="flex flex-col text-left">
+            <h1 className="text-6xl md:text-7xl lg:text-8xl font-extrabold text-buap-900 tracking-tighter leading-none mb-1 md:mb-2 drop-shadow-sm">
+              Kanan
+            </h1>
+            <p className="text-lg md:text-xl lg:text-2xl text-slate-700/90 font-medium tracking-wide drop-shadow-sm leading-tight md:leading-snug">
+              Sistema de Monitoreo IoT de <br />la calidad del agua
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Panel Derecho: Formulario de Login */}
+      <div className="relative z-10 w-full md:w-1/2 flex flex-col items-center justify-center p-4 py-8 animate-fade-in">
+        <div className="w-full max-w-sm">
+          {/* Form Card - conserved exactly as is */}
+          <div className="card p-8 shadow-card-lg backdrop-blur-sm bg-white/90">
+            <div className="mb-7">
+              <h2 className="text-xl font-bold text-buap-900 tracking-tight">Iniciar sesión</h2>
+              <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
+                Ingresa tus credenciales para acceder al sistema de monitoreo.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+              {/* email */}
+              <div className="flex flex-col gap-1.5">
+                <label className="label-sm" htmlFor="usuario-input">Correo electrónico</label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+                      <path d="M2 5.5l6 4 6-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <input
+                    id="usuario-input"
+                    type="email"
+                    value={usuario}
+                    onChange={(e) => { setUsuario(e.target.value); setError(""); }}
+                    placeholder="correo@ejemplo.com"
+                    className="input-base pl-10"
+                    autoComplete="email"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* password */}
+              <div className="flex flex-col gap-1.5">
+                <label className="label-sm" htmlFor="password-input">Contraseña</label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                      <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                      <circle cx="8" cy="11" r="1.2" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <input
+                    id="password-input"
+                    type={showPass ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                    placeholder="••••••••"
+                    className="input-base pl-10 pr-11"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((v) => !v)}
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded"
+                    tabIndex={-1}
+                  >
+                    {showPass ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
+                        <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+                        <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
+                        <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* errors */}
+              {error && (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium animate-shake">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
+                    <line x1="7" y1="4" x2="7" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="7" cy="10" r="0.8" fill="currentColor" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              {/* submit button */}
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="btn-primary h-11 justify-center mt-1"
+              >
+                {loading ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin-slow" />
+                ) : (
+                  <>
+                    Iniciar sesión
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          <p className="text-center text-sm text-slate-700 mt-5 font-medium drop-shadow-sm">
+            ¿No tienes cuenta?{" "}
+            <button onClick={onGoRegister} className="text-buap-900 font-bold hover:underline">
+              Regístrate
+            </button>
+          </p>
         </div>
       </div>
     </div>

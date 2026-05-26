@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { editarNodo, eliminarNodo } from "../api";
 
 const STATUS_DOT = {
-  activo:   "#1a8a55",
-  alerta:   "#ef4444",
+  activo: "#1a8a55",
+  alerta: "#ef4444",
   inactivo: "#94a3b8",
 };
 
@@ -13,15 +13,14 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [msg, setMsg] = useState(null); // { type: "ok"|"err", text }
+  const [msg, setMsg] = useState(null);
 
-  // Sync form when selected node changes
   useEffect(() => {
     if (!selected) return;
     setForm({
-      ubicacion:  selected.ubicacion ?? "",
+      ubicacion: selected.ubicacion ?? "",
       version_fw: selected.version_firmware ?? "",   // buildNode usa version_firmware
-      activo:     selected.status !== "inactivo",    // buildNode no guarda activo, usa status
+      activo: selected.status !== "inactivo",    // buildNode no guarda activo, usa status
     });
     setMsg(null);
     setConfirmDelete(false);
@@ -36,9 +35,9 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
     setMsg(null);
     try {
       const res = await editarNodo(selected.id, {
-        ubicacion:  form.ubicacion.trim() || undefined,
+        ubicacion: form.ubicacion.trim() || undefined,
         version_fw: form.version_fw.trim() || undefined,
-        activo:     form.activo,
+        activo: form.activo,
       });
       setMsg({ type: "ok", text: "Nodo actualizado correctamente." });
       onNodesChanged?.(res.nodo);
@@ -72,7 +71,7 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
     >
       <div className="bg-white rounded-2xl shadow-2xl flex overflow-hidden w-full max-w-2xl mx-4" style={{ maxHeight: "85vh" }}>
 
-        {/* ── LEFT: Lista de nodos ── */}
+        {/*lista de nodos*/}
         <div className="w-52 flex-shrink-0 bg-slate-50 border-r border-slate-100 flex flex-col">
           <div className="px-4 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-buap-900">Configurar nodos</h2>
@@ -86,11 +85,10 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
                 <button
                   key={node.id}
                   onClick={() => setSelected(node)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all mb-1 ${
-                    isSel
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all mb-1 ${isSel
                       ? "bg-white shadow-sm ring-1 ring-inset ring-buap-200"
                       : "hover:bg-white/70"
-                  }`}
+                    }`}
                 >
                   <span
                     className="w-2 h-2 rounded-full flex-shrink-0"
@@ -108,7 +106,7 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
           </div>
         </div>
 
-        {/* ── RIGHT: Edición ── */}
+        {/* edicion*/}
         <div className="flex-1 flex flex-col overflow-y-auto">
           {/* Header del panel */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
@@ -129,7 +127,7 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
           {selected ? (
             <div className="flex-1 px-6 py-5 flex flex-col gap-5">
 
-              {/* Ubicación */}
+              {/* ubicacion */}
               <div className="flex flex-col gap-1.5">
                 <label className="label-sm" htmlFor="cfg-ubicacion">Ubicación</label>
                 <input
@@ -158,7 +156,7 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
                 />
               </div>
 
-              {/* Activo — toggle switch */}
+              {/* switch */}
               <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl">
                 <div>
                   <p className="text-sm font-semibold text-slate-800">Nodo activo</p>
@@ -180,22 +178,21 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
 
               {/* Mensaje de feedback */}
               {msg && (
-                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium border ${
-                  msg.type === "ok"
+                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium border ${msg.type === "ok"
                     ? "bg-emerald-50 border-emerald-200 text-emerald-700"
                     : "bg-red-50 border-red-200 text-red-600"
-                }`}>
+                  }`}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                     {msg.type === "ok"
-                      ? <><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></>
-                      : <><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2"/><line x1="7" y1="4" x2="7" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="7" cy="10" r="0.8" fill="currentColor"/></>
+                      ? <><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" /><path d="M4.5 7l2 2 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></>
+                      : <><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" /><line x1="7" y1="4" x2="7" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><circle cx="7" cy="10" r="0.8" fill="currentColor" /></>
                     }
                   </svg>
                   {msg.text}
                 </div>
               )}
 
-              {/* Botón Guardar */}
+              {/*boton de guardar */}
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -207,7 +204,7 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
                 }
               </button>
 
-              {/* ── Zona de peligro ── */}
+              {/* danger zone */}
               <div className="border border-red-200 rounded-xl p-4 mt-2">
                 <p className="text-xs font-bold text-red-600 mb-1">Zona de peligro</p>
                 <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">

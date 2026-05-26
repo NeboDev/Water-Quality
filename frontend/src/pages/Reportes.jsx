@@ -25,7 +25,7 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// subs
 
 function StatusBadge({ cumple }) {
   return cumple ? (
@@ -48,13 +48,11 @@ function StatusBadge({ cumple }) {
 }
 
 // main component
-
 export default function Reportes({ nodes }) {
   // state
   const [reportes, setReportes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   // form
   const [nodoId, setNodoId] = useState("");
   const [fechaInicio, setFechaInicio] = useState(() => {
@@ -68,10 +66,8 @@ export default function Reportes({ nodes }) {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [lastGenerated, setLastGenerated] = useState(null); // { cumpleNom }
-
   // Per-row download loading
   const [downloadingId, setDownloadingId] = useState(null);
-
   // loadlist
   const loadReportes = useCallback(async () => {
     setLoading(true);
@@ -87,7 +83,6 @@ export default function Reportes({ nodes }) {
   }, []);
 
   useEffect(() => { loadReportes(); }, [loadReportes]);
-
   // generate
   const handleGenerar = async (e) => {
     e.preventDefault();

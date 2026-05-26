@@ -211,6 +211,7 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
                 dot={false}
                 activeDot={{ r: 4, fill: NODE_PALETTE[idx % NODE_PALETTE.length], stroke: "#fff", strokeWidth: 2 }}
                 connectNulls
+                isAnimationActive={false}
               />
             ))}
           </LineChart>
@@ -220,14 +221,14 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
   );
 }
 
-export default function Overview({ nodes, globalAlerts, onResolveAlert, canResolve, onSelectNode, onExpandParam }) {
+export default function Overview({ nodes, globalAlerts, onResolveAlert, canResolve, onSelectNode, onExpandParam, activeParams = [] }) {
   const nodesWithHistory = nodes.filter((n) => n.history);
 
   return (
     <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-5 overflow-y-auto lg:overflow-hidden min-h-0">
 
       {/* Param cards grid */}
-      <div className="flex-1 flex flex-col lg:overflow-y-auto custom-scrollbar pr-2 pb-4 lg:h-full lg:min-h-0">
+      <div className="flex-1 flex flex-col lg:overflow-y-auto scrollbar-none pr-2 pb-4 lg:h-full lg:min-h-0">
         {nodes.length === 0 ? (
           <div className="flex-1 flex items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex flex-col items-center gap-3 text-slate-400">
@@ -259,30 +260,22 @@ export default function Overview({ nodes, globalAlerts, onResolveAlert, canResol
             </div>
           </div>
         ) : (
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-[minmax(0,1fr)]">
-            {PARAMS.filter(p => p !== 'conductividad').map((param) => (
-              <MultiNodeParamCard
-                key={param}
-                param={param}
-                nodes={nodesWithHistory}
-                globalAlerts={globalAlerts}
-                onResolveAlert={onResolveAlert}
-                canResolve={canResolve}
-                onExpand={onExpandParam}
-              />
-            ))}
-
-            {/* Conductividad spans 2 columns */}
-            <div className="lg:col-span-2 xl:col-span-2 h-full">
-              <MultiNodeParamCard
-                param="conductividad"
-                nodes={nodesWithHistory}
-                globalAlerts={globalAlerts}
-                onResolveAlert={onResolveAlert}
-                canResolve={canResolve}
-                onExpand={onExpandParam}
-              />
-            </div>
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 auto-rows-[minmax(0,1fr)]">
+            {activeParams.map((param, idx) => {
+              const isLastOdd = (activeParams.length % 2 !== 0) && (idx === activeParams.length - 1);
+              return (
+                <div key={param} className={isLastOdd ? "lg:col-span-2 h-full" : "h-full"}>
+                  <MultiNodeParamCard
+                    param={param}
+                    nodes={nodesWithHistory}
+                    globalAlerts={globalAlerts}
+                    onResolveAlert={onResolveAlert}
+                    canResolve={canResolve}
+                    onExpand={onExpandParam}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -304,7 +297,7 @@ export default function Overview({ nodes, globalAlerts, onResolveAlert, canResol
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 scrollbar-none bg-slate-50/50">
           {globalAlerts?.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 text-center py-12">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
