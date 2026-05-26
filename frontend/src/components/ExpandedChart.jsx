@@ -22,8 +22,8 @@ const CustomTooltip = ({ active, payload, unit }) => {
 
 export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp, onClose, disabled }) {
   const limits = NOM_127_LIMITS[param];
-  const color  = disabled ? "#94a3b8" : PARAM_COLORS[param];
-  
+  const color = disabled ? "#94a3b8" : PARAM_COLORS[param];
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,7 +36,7 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
       try {
         const rawTelemetry = await fetchTelemetria(nodeId, 30);
         if (!active) return;
-        
+
         const historyObj = buildHistory(rawTelemetry);
         setData(historyObj[param] || []);
       } catch (err) {
@@ -46,19 +46,18 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
       }
     };
     loadData();
-    
+
     return () => { active = false; };
   }, [nodeId, param]);
 
   const outOfRange = data.filter((d) => d.value < limits.min || d.value > limits.max).length;
-  const avg   = data.length ? (data.reduce((s, d) => s + d.value, 0) / data.length).toFixed(2) : "—";
-  const minV  = data.length ? Math.min(...data.map((d) => d.value)).toFixed(2) : "—";
-  const maxV  = data.length ? Math.max(...data.map((d) => d.value)).toFixed(2) : "—";
+  const avg = data.length ? (data.reduce((s, d) => s + d.value, 0) / data.length).toFixed(2) : "—";
+  const minV = data.length ? Math.min(...data.map((d) => d.value)).toFixed(2) : "—";
+  const maxV = data.length ? Math.max(...data.map((d) => d.value)).toFixed(2) : "—";
 
   const yMin = data.length ? Math.min(...data.map((d) => d.value)) * 0.93 : 0;
   const yMax = data.length ? Math.max(...data.map((d) => d.value)) * 1.07 : 10;
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
@@ -102,10 +101,10 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
         {/* Stats row */}
         <div className="grid grid-cols-4 gap-px bg-slate-100 border-b border-slate-100">
           {[
-            { label: "Promedio",         value: avg,   unit: limits.unit || "pH" },
-            { label: "Mínimo",           value: minV,  unit: limits.unit || "pH" },
-            { label: "Máximo",           value: maxV,  unit: limits.unit || "pH" },
-            { label: "Fuera de norma",   value: outOfRange, unit: "muestras", warn: outOfRange > 0 },
+            { label: "Promedio", value: avg, unit: limits.unit || "pH" },
+            { label: "Mínimo", value: minV, unit: limits.unit || "pH" },
+            { label: "Máximo", value: maxV, unit: limits.unit || "pH" },
+            { label: "Fuera de norma", value: outOfRange, unit: "muestras", warn: outOfRange > 0 },
           ].map(({ label, value, unit, warn }) => (
             <div key={label} className="bg-white px-6 py-3 relative">
               <p className="label-sm text-[10px] mb-0.5">{label}</p>
@@ -133,7 +132,7 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
               <p className="text-red-500 font-medium bg-red-50 px-4 py-2 rounded-xl">{error}</p>
             </div>
           )}
-          
+
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs text-slate-400 font-medium">
               NOM-127: {limits.min} – {limits.max} {limits.unit || "—"}
@@ -156,7 +155,7 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
             <AreaChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id={`grad-${param}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={color} stopOpacity={0.15} />
+                  <stop offset="5%" stopColor={color} stopOpacity={0.15} />
                   <stop offset="95%" stopColor={color} stopOpacity={0.02} />
                 </linearGradient>
               </defs>

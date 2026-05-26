@@ -99,7 +99,7 @@ const CustomTooltip = ({ active, payload, label, nodes, unit }) => {
   );
 };
 
-function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canResolve }) {
+function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canResolve, onExpand }) {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -120,7 +120,23 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
   const yMax = yVals.length ? Math.max(...yVals) * 1.05 : 10;
 
   return (
-    <div className={`card p-5 flex flex-col h-full border ${hasAlert ? "border-red-200" : "border-slate-100"}`}>
+    <div
+      className={`card p-5 cursor-pointer hover:shadow-card-md transition-shadow duration-200 group relative flex flex-col h-full border ${
+        hasAlert ? "border-red-200" : "border-slate-100"
+      }`}
+      onClick={() => onExpand?.(param)}
+      title="Clic para ver comparación detallada de historial"
+    >
+      {/* Expand/compare hint */}
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <div className="flex items-center gap-1 bg-buap-50 border border-buap-100 rounded-lg px-2 py-1 shadow-sm">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-buap-500">
+            <path d="M1 10L10 1M10 1H5M10 1V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="text-[10px] font-semibold text-buap-600">Comparar</span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-start justify-between mb-3 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -133,7 +149,7 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
           </div>
         </div>
         {hasAlert && (
-          <span className="text-[10px] font-bold bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md flex-shrink-0">
+          <span className="text-[10px] font-bold bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md flex-shrink-0 group-hover:opacity-0 transition-opacity">
             ⚠ Alerta
           </span>
         )}
@@ -195,6 +211,7 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
                 dot={false}
                 activeDot={{ r: 4, fill: NODE_PALETTE[idx % NODE_PALETTE.length], stroke: "#fff", strokeWidth: 2 }}
                 connectNulls
+                isAnimationActive={false}
               />
             ))}
           </LineChart>
@@ -204,14 +221,14 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
   );
 }
 
-export default function Overview({ nodes, globalAlerts, onResolveAlert, canResolve, onSelectNode }) {
+export default function Overview({ nodes, globalAlerts, onResolveAlert, canResolve, onSelectNode, onExpandParam, activeParams = [] }) {
   const nodesWithHistory = nodes.filter((n) => n.history);
 
   return (
-    <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-5 overflow-hidden min-h-0">
+    <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-5 overflow-y-auto lg:overflow-hidden min-h-0">
 
       {/* Param cards grid */}
-      <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar pr-2 pb-4">
+      <div className="flex-1 flex flex-col lg:overflow-y-auto scrollbar-none pr-2 pb-4 lg:h-full lg:min-h-0">
         {nodes.length === 0 ? (
           <div className="flex-1 flex items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex flex-col items-center gap-3 text-slate-400">
@@ -243,34 +260,28 @@ export default function Overview({ nodes, globalAlerts, onResolveAlert, canResol
             </div>
           </div>
         ) : (
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-[minmax(0,1fr)]">
-            {PARAMS.filter(p => p !== 'conductividad').map((param) => (
-              <MultiNodeParamCard
-                key={param}
-                param={param}
-                nodes={nodesWithHistory}
-                globalAlerts={globalAlerts}
-                onResolveAlert={onResolveAlert}
-                canResolve={canResolve}
-              />
-            ))}
-
-            {/* Conductividad spans 2 columns */}
-            <div className="lg:col-span-2 xl:col-span-2 h-full">
-              <MultiNodeParamCard
-                param="conductividad"
-                nodes={nodesWithHistory}
-                globalAlerts={globalAlerts}
-                onResolveAlert={onResolveAlert}
-                canResolve={canResolve}
-              />
-            </div>
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 auto-rows-[minmax(0,1fr)]">
+            {activeParams.map((param, idx) => {
+              const isLastOdd = (activeParams.length % 2 !== 0) && (idx === activeParams.length - 1);
+              return (
+                <div key={param} className={isLastOdd ? "lg:col-span-2 h-full" : "h-full"}>
+                  <MultiNodeParamCard
+                    param={param}
+                    nodes={nodesWithHistory}
+                    globalAlerts={globalAlerts}
+                    onResolveAlert={onResolveAlert}
+                    canResolve={canResolve}
+                    onExpand={onExpandParam}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Alertas Side Panel */}
-      <div className="w-full lg:w-80 flex-shrink-0 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm min-h-0">
+      <div className="w-full lg:w-80 lg:h-full flex-shrink-0 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm min-h-0">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
           <h2 className="text-sm font-bold text-buap-900 flex items-center gap-2">
             Notificaciones
@@ -286,7 +297,7 @@ export default function Overview({ nodes, globalAlerts, onResolveAlert, canResol
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 scrollbar-none bg-slate-50/50">
           {globalAlerts?.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 text-center py-12">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">

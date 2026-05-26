@@ -102,6 +102,7 @@ export default function ParameterCard({ param, history, currentValue, onExpand, 
               strokeWidth={2.5}
               dot={false}
               activeDot={{ r: 4, fill: color, stroke: "#fff", strokeWidth: 2 }}
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>

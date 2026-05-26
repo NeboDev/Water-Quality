@@ -22,7 +22,6 @@ const ROLE_LABEL = {
   admin: "Admin", icuap: "ICUAP", operador: "Operador", visualizador: "Visualizador",
 };
 
-// ── Hook reutilizable para cerrar menú al click externo ──
 function useClickOutside(ref, onClose) {
   useEffect(() => {
     const handler = (e) => {
@@ -49,12 +48,15 @@ export default function Header({
 
   const [nodeMenuOpen, setNodeMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const nodeRef = useRef(null);
   const userRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   useClickOutside(nodeRef, () => setNodeMenuOpen(false));
   useClickOutside(userRef, () => setUserMenuOpen(false));
+  useClickOutside(mobileMenuRef, () => setMobileMenuOpen(false));
 
   const selectNode = (node) => {
     onSelectNode(node);
@@ -67,7 +69,7 @@ export default function Header({
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center px-6 gap-4 flex-shrink-0 z-20">
+    <header className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center px-3 sm:px-6 gap-2 sm:gap-4 flex-shrink-0 z-20">
 
       {/* ── Logo ── */}
       <div className="flex items-center gap-3 flex-shrink-0">
@@ -79,11 +81,11 @@ export default function Header({
         </div>
         <div>
           <p className="text-sm font-bold text-buap-900 leading-none tracking-tight">Kanan</p>
-          <p className="text-[10px] text-slate-400 leading-none mt-0.5">NOM-127-SSA1-2021</p>
+          <p className="text-[10px] text-slate-400 leading-none mt-0.5 hidden sm:block">Sistema de Monitoreo IoT</p>
         </div>
       </div>
 
-      <div className="w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
+      <div className="hidden sm:block w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
 
       {/* ── Node dropdown ── */}
       <div className="relative flex-1 min-w-0" ref={nodeRef}>
@@ -91,7 +93,7 @@ export default function Header({
           <>
             <button
               onClick={() => setNodeMenuOpen((v) => !v)}
-              className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all duration-150 max-w-xs ${nodeMenuOpen ? "bg-buap-50 ring-2 ring-buap-200" : "bg-slate-100 hover:bg-slate-200"
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-all duration-150 min-w-0 max-w-[120px] sm:max-w-xs ${nodeMenuOpen ? "bg-buap-50 ring-2 ring-buap-200" : "bg-slate-100 hover:bg-slate-200"
                 }`}
             >
               {/* Status dot */}
@@ -135,7 +137,7 @@ export default function Header({
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${isSel ? "bg-buap-50 ring-1 ring-inset ring-buap-200" : "hover:bg-slate-50"
                           }`}
                       >
-                        {/* Status indicator */}
+                        {/* indicador de estado del nodo */}
                         <div className="flex-shrink-0 flex flex-col items-center gap-1">
                           <span
                             className={`w-2.5 h-2.5 rounded-full ${node.status === "activo" ? "animate-pulse-dot" : ""}`}
@@ -175,10 +177,10 @@ export default function Header({
                   })}
                 </div>
 
-                {/* Footer: configurar + registrar */}
+
                 <div className="border-t border-slate-100 px-2 py-2 flex flex-col gap-1">
 
-                  {/* Configuración de nodos */}
+                  {/* conexion al endpoint de configuracion de nodos */}
                   <button
                     disabled={!canConfigNodes}
                     onClick={() => { if (canConfigNodes) { setNodeMenuOpen(false); onConfigNodes(); } }}
@@ -206,7 +208,7 @@ export default function Header({
                     </div>
                   </button>
 
-                  {/* Registrar nuevo nodo */}
+                  {/* add node */}
                   <button
                     disabled={!canAddNode}
                     onClick={() => { if (canAddNode) { setNodeMenuOpen(false); onAddNode(); } }}
@@ -242,9 +244,9 @@ export default function Header({
 
 
 
-      {/* ── View toggle ── */}
-      <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-0.5 flex-shrink-0">
-        {[
+      {/* toggle para pantallas pequenias*/}
+      {(() => {
+        const viewOptions = [
           {
             id: "overview", title: "Vista general",
             icon: (
@@ -276,7 +278,7 @@ export default function Header({
               </svg>
             ),
           },
-          // Reportes — solo visible para admin / icuap
+          // Reportes: solo visible para admin / icuap
           ...(canViewReports ? [{
             id: "reportes", title: "Reportes",
             icon: (
@@ -288,24 +290,80 @@ export default function Header({
               </svg>
             ),
           }] : []),
-        ].map((v) => (
-          <button
-            key={v.id}
-            onClick={() => onViewChange(v.id)}
-            title={v.title}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
-              view === v.id ? "bg-white text-buap-700 shadow-card" : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {v.icon}
-            <span className="hidden sm:inline">{v.title}</span>
-          </button>
-        ))}
-      </div>
+        ];
 
-      <div className="w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
+        return (
+          <>
+            {/* Desktop View toggle */}
+            <div className="hidden md:flex items-center bg-slate-100 rounded-xl p-1 gap-0.5 flex-shrink-0">
+              {viewOptions.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => onViewChange(v.id)}
+                  title={v.title}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${view === v.id ? "bg-white text-buap-700 shadow-card" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                >
+                  {v.icon}
+                  <span className="hidden sm:inline">{v.title}</span>
+                </button>
+              ))}
+            </div>
 
-      {/* ── Global Alerts Bell ── */}
+            {/* Mobile View*/}
+            <div className="relative md:hidden flex-shrink-0" ref={mobileMenuRef}>
+              <button
+                onClick={() => setMobileMenuOpen((v) => !v)}
+                className={`p-2 rounded-xl transition-all duration-150 select-none ${mobileMenuOpen ? "bg-buap-50 ring-2 ring-buap-200 text-buap-700" : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                  }`}
+                title="Menú de vistas"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  {mobileMenuOpen ? (
+                    <path d="M4.5 4.5l11 11M15.5 4.5l-11 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  ) : (
+                    <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  )}
+                </svg>
+              </button>
+
+              {/* Mobile menu dropdown */}
+              {mobileMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-fade-in">
+                  <div className="px-3 pt-3 pb-1">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 px-2 mb-1.5">Cambiar vista</p>
+                  </div>
+                  <div className="px-2 pb-2 flex flex-col gap-1">
+                    {viewOptions.map((v) => {
+                      const isSel = view === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => {
+                            onViewChange(v.id);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${isSel ? "bg-buap-50 text-buap-700 ring-1 ring-inset ring-buap-200 font-semibold" : "hover:bg-slate-50 text-slate-600 hover:text-slate-800"
+                            }`}
+                        >
+                          <span className={isSel ? "text-buap-600" : "text-slate-400"}>
+                            {v.icon}
+                          </span>
+                          <span className="text-xs">{v.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
+
+      <div className="hidden sm:block w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
+
+      {/* campana de alertas */}
       <button
         onClick={() => setShowGlobalAlerts(true)}
         className="relative p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
@@ -322,12 +380,12 @@ export default function Header({
         )}
       </button>
 
-      {/* ── User menu ── */}
+      {/* menu del usuario*/}
       {user && (
         <div className="relative flex-shrink-0" ref={userRef}>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-150 select-none ${userMenuOpen ? "bg-buap-50 ring-2 ring-buap-200" : "bg-slate-100 hover:bg-slate-200"
+            className={`flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-full sm:rounded-xl transition-all duration-150 select-none ${userMenuOpen ? "bg-buap-50 ring-2 ring-buap-200" : "bg-slate-100 hover:bg-slate-200"
               }`}
           >
             <div className="w-6 h-6 rounded-full bg-buap-100 flex items-center justify-center flex-shrink-0">
@@ -336,7 +394,7 @@ export default function Header({
                 <path d="M1.5 11.5c0-2.2 2.24-3.5 5-3.5s5 1.3 5 3.5" stroke="#2333ce" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
             </div>
-            <div className="flex flex-col leading-none gap-0.5 text-left">
+            <div className="hidden sm:flex flex-col leading-none gap-0.5 text-left">
               <span className="text-xs font-semibold text-buap-800">{user.nombre}</span>
               <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full w-fit ${ROLE_BADGE[user.rol] ?? "bg-slate-200 text-slate-500"}`}>
                 {ROLE_LABEL[user.rol] ?? user.rol}
@@ -344,7 +402,7 @@ export default function Header({
             </div>
             <svg
               width="12" height="12" viewBox="0 0 12 12" fill="none"
-              className={`text-slate-400 transition-transform duration-200 flex-shrink-0 ${userMenuOpen ? "rotate-180" : ""}`}
+              className={`text-slate-400 transition-transform duration-200 flex-shrink-0 hidden sm:block ${userMenuOpen ? "rotate-180" : ""}`}
             >
               <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

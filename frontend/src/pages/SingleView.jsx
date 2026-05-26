@@ -1,12 +1,12 @@
 import ParameterCard from "../components/ParameterCard";
-import { PARAMS } from "../constants";
 
 export default function SingleView({
   loadingTelemetry,
   nodeReady,
   selectedNode,
   setExpandedParam,
-  loadTelemetry
+  loadTelemetry,
+  activeParams = []
 }) {
   return (
     <>
@@ -70,27 +70,21 @@ export default function SingleView({
 
       {nodeReady && (
         <div className="flex-1 flex flex-col w-full max-w-[1600px] mx-auto overflow-y-auto custom-scrollbar pr-2 pb-4">
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-[minmax(0,1fr)]">
-            {PARAMS.filter(p => p !== 'conductividad').map((p) => (
-              <ParameterCard
-                key={p}
-                param={p}
-                history={selectedNode.history[p]}
-                currentValue={selectedNode.valores[p]}
-                onExpand={() => setExpandedParam(p)}
-                disabled={selectedNode.status === "inactivo"}
-              />
-            ))}
-
-            <div className="lg:col-span-2 xl:col-span-2 h-full">
-              <ParameterCard
-                param="conductividad"
-                history={selectedNode.history.conductividad}
-                currentValue={selectedNode.valores.conductividad}
-                onExpand={() => setExpandedParam("conductividad")}
-                disabled={selectedNode.status === "inactivo"}
-              />
-            </div>
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 auto-rows-[minmax(0,1fr)]">
+            {activeParams.map((p, idx) => {
+              const isLastOdd = (activeParams.length % 2 !== 0) && (idx === activeParams.length - 1);
+              return (
+                <div key={p} className={isLastOdd ? "lg:col-span-2 h-full" : "h-full"}>
+                  <ParameterCard
+                    param={p}
+                    history={selectedNode.history[p]}
+                    currentValue={selectedNode.valores[p]}
+                    onExpand={() => setExpandedParam(p)}
+                    disabled={selectedNode.status === "inactivo"}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

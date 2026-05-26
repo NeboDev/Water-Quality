@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 function verificarToken(req, res, next) {
-    // El token llega en el header Authorization con formato: "Bearer <token>"
+    // El token llega en una cookie HttpOnly llamada "kanan_token"
     const token = req.cookies?.kanan_token;
 
     if (!token) {

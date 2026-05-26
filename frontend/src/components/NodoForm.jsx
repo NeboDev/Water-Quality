@@ -5,7 +5,7 @@ import InputField from "./common/InputField";
 import Alert from "./common/Alert";
 import SuccessState from "./common/SuccessState";
 
-// ── Validaciones simples en cliente ──────────────────
+// validaciones del lado del cliente
 const MAC_REGEX = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
 
 export default function NodoForm({ onSuccess, onClose }) {
@@ -14,6 +14,7 @@ export default function NodoForm({ onSuccess, onClose }) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [successData, setSuccessData] = useState(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -37,7 +38,13 @@ export default function NodoForm({ onSuccess, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validation = validate();
-    if (Object.keys(validation).length > 0) { setErrors(validation); return; }
+    if (Object.keys(validation).length > 0) {
+      setErrors(validation);
+      if (validation.version_fw) {
+        setShowAdvanced(true);
+      }
+      return;
+    }
 
     setLoading(true);
     setServerError("");
@@ -83,9 +90,6 @@ export default function NodoForm({ onSuccess, onClose }) {
             onChange={set("mac")}
             placeholder="A4:CF:12:45:6B:2F"
             error={errors.mac}
-            className="font-mono"
-            autoComplete="off"
-            spellCheck={false}
           />
 
           {/* Ubicación */}
@@ -99,22 +103,50 @@ export default function NodoForm({ onSuccess, onClose }) {
             error={errors.ubicacion}
           />
 
-          {/* Versión FW (opcional) */}
-          <InputField
-            id="nodo-fw"
-            label={
-              <>
-                Versión firmware
-                <span className="ml-1.5 text-[10px] font-normal text-slate-400">(opcional)</span>
-              </>
-            }
-            type="text"
-            value={form.version_fw}
-            onChange={set("version_fw")}
-            placeholder="1.0.0"
-            error={errors.version_fw}
-            className="font-mono"
-          />
+          {/* Opciones avanzadas (por ahora unicamente la version del fw que no lo veia necesario pero weno) */}
+          <div className="border-t border-slate-100 pt-3.5 mt-1">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-wider focus:outline-none"
+            >
+              <span>Opciones avanzadas</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform duration-200 ${showAdvanced ? "rotate-180 text-buap-500" : "text-slate-400"
+                  }`}
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+
+            {showAdvanced && (
+              <div className="mt-3 animate-fade-in">
+                {/* Versión FW (opcional) */}
+                <InputField
+                  id="nodo-fw"
+                  label={
+                    <>
+                      Versión firmware
+                      <span className="ml-1.5 text-[10px] font-normal text-slate-400">(opcional)</span>
+                    </>
+                  }
+                  type="text"
+                  value={form.version_fw}
+                  onChange={set("version_fw")}
+                  placeholder="1.0.0"
+                  error={errors.version_fw}
+                />
+              </div>
+            )}
+          </div>
 
           {/* Error del servidor */}
           <Alert message={serverError} type="error" />

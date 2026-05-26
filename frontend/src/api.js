@@ -19,7 +19,7 @@ api.interceptors.response.use(
   }
 );
 
-// ── Autenticación ─────────────────────────────────────
+// auth
 
 export async function login(email, password) {
   const { data } = await api.post("/auth/login", { email, password });
@@ -36,7 +36,7 @@ export async function checkSession() {
   return data;
 }
 
-// ── Nodos ─────────────────────────────────────────────
+// nodos
 
 export async function fetchNodos() {
   const { data } = await api.get("/nodos");
@@ -58,7 +58,7 @@ export async function eliminarNodo(id) {
   return data;
 }
 
-// ── Telemetría ────────────────────────────────────────
+// terlemetria
 
 export async function fetchTelemetria(nodoId, limit = 50) {
   const { data } = await api.get(`/telemetria/${nodoId}?limit=${limit}`);
@@ -70,7 +70,7 @@ export async function fetchTelemetriaRango(nodoId, desde, hasta) {
   return data.lecturas;
 }
 
-// ── Alertas ───────────────────────────────────────────
+// alertas
 
 export async function fetchAlertas({ resuelta, nodo_id } = {}) {
   const params = {};
@@ -85,7 +85,7 @@ export async function resolverAlerta(alertaId) {
   return data;
 }
 
-// ── Muestras ──────────────────────────────────────────
+// muestras
 
 export async function fetchMuestras({ nodo_id, limit = 10 } = {}) {
   const params = { limit };
@@ -104,7 +104,7 @@ export async function actualizarNota(muestraId, nota) {
   return data;
 }
 
-// ── Reportes ──────────────────────────────────────────
+// reportes
 
 export async function fetchReportes() {
   const { data } = await api.get('/reportes');
@@ -112,7 +112,6 @@ export async function fetchReportes() {
 }
 
 export async function generarReporte({ nodo_id, fecha_inicio, fecha_fin }) {
-  // El backend responde con application/pdf — necesitamos responseType: 'blob'
   const response = await api.post(
     '/reportes/generar',
     { nodo_id, fecha_inicio, fecha_fin },
@@ -130,5 +129,4 @@ export async function descargarPdfReporte(id) {
   return response.data; // Blob PDF
 }
 
-// Exportar la instancia base por si se necesita directamente (ej. para login)
 export default api;

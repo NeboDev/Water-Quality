@@ -128,6 +128,7 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
   const [unsaved, setUnsaved] = useState(false);
   const [locating, setLocating] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const isDraggable = isAdmin && dragMode;
 
@@ -195,7 +196,14 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
         const m = markersRef.current[node.id];
         m.setIcon(icon);
         m.setLatLng(latLng);
-        m.options.draggable !== isDraggable && (isDraggable ? m.dragging.enable() : m.dragging.disable());
+        if (m.dragging && m.options.draggable !== isDraggable) {
+          if (isDraggable) {
+            m.dragging.enable();
+          } else {
+            m.dragging.disable();
+          }
+          m.options.draggable = isDraggable;
+        }
         m.getPopup()?.setContent(buildPopupHTML(node, color));
       } else {
         // Create new marker
@@ -268,14 +276,44 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
 
 
   return (
-    <div className="flex gap-5 flex-1 min-h-0 animate-fade-in">
+    <div className="flex gap-0 lg:gap-5 flex-1 min-h-0 animate-fade-in relative">
+      
+      {/* Overlay backdrop for mobile drawer */}
+      {showSidebar && (
+        <div
+          className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[1010] animate-fade-in"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* node list left sidebar */}
-      <div className="w-72 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar flex-shrink-0 relative">
-        <div className="sticky top-0 bg-slate-50 py-2 z-10 border-b border-slate-200 mb-1">
+      <div
+        className={`
+          flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar flex-shrink-0
+          transition-all duration-300 ease-out
+          ${showSidebar
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100"
+          }
+          fixed inset-y-4 left-4 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/80 z-[1020] p-4
+          lg:static lg:w-72 lg:bg-transparent lg:shadow-none lg:border-none lg:p-0 lg:h-auto lg:z-auto
+        `}
+      >
+        <div className="sticky top-0 bg-white/90 lg:bg-transparent py-2 z-10 border-b border-slate-200 mb-1 flex items-center justify-between">
           <h2 className="text-sm font-bold text-buap-900">
             Nodos registrados ({nodes.length})
           </h2>
+          <button
+            onClick={() => setShowSidebar(false)}
+            className="lg:hidden p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+            title="Cerrar lista"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
+        
         <div className="flex flex-col gap-3 px-1 pb-1">
           {nodes.length === 0 ? (
             <div className="p-4 text-center flex flex-col items-center gap-2 mt-2 text-slate-400">
@@ -291,7 +329,10 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
               return (
                 <div
                   key={node.id}
-                  onClick={() => onSelectNode(node)}
+                  onClick={() => {
+                    onSelectNode(node);
+                    setShowSidebar(false); // close sidebar on select on mobile
+                  }}
                   className={`card-hover p-4 cursor-pointer transition-all ${isSel ? "ring-2 ring-offset-2" : ""
                     }`}
                   style={isSel ? { "--tw-ring-color": color, borderColor: color + "50" } : {}}
@@ -357,6 +398,19 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
         {/* map*/}
         <div className="card overflow-hidden flex-1 border border-slate-200/60 shadow-inner min-h-[400px] relative">
           <div ref={mapRef} className="w-full h-full" />
+
+          {/* Floating Toggle Button (visible only on small screens) */}
+          {nodes.length > 0 && (
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="lg:hidden absolute top-3 right-3 z-[999] flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-xl shadow-lg hover:bg-slate-50 active:scale-[0.98] transition-all text-xs font-semibold text-slate-700 select-none"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M1.5 3h11M1.5 7h11M1.5 11h11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <span>Ver nodos ({nodes.length})</span>
+            </button>
+          )}
 
           {nodes.length === 0 && (
             <div className="absolute inset-0 z-[1000] bg-white/70 backdrop-blur-[2px] flex items-center justify-center">

@@ -6,6 +6,7 @@ import StatusBar from "./components/StatusBar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ExpandedChart from "./components/ExpandedChart";
+import MultiNodeExpandedChart from "./components/MultiNodeExpandedChart";
 import NodoForm from "./components/NodoForm";
 import UsuarioForm from "./components/UsuarioForm";
 import NodoConfig from "./components/NodoConfig";
@@ -14,7 +15,7 @@ import Overview from "./pages/Overview";
 import Reportes from "./pages/Reportes";
 import SingleView from "./pages/SingleView";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { buildNode, buildHistory, telemetryToPoint, PARAMS } from "./constants";
+import { buildNode, buildHistory, telemetryToPoint, PARAMS, NOM_127_LIMITS } from "./constants";
 import { fetchNodos, fetchTelemetria, fetchAlertas, resolverAlerta, logout as apiLogout } from "./api";
 import { io } from "socket.io-client";
 import { usePermissions } from "./hooks/usePermissions";
@@ -78,6 +79,7 @@ export default function App() {
 
   // Expanded chart modal
   const [expandedParam, setExpandedParam] = useState(null); // param key or null
+  const [expandedOverviewParam, setExpandedOverviewParam] = useState(null);
   const [showNodoForm, setShowNodoForm] = useState(false);
   const [showUsuarioForm, setShowUsuarioForm] = useState(false);
   const [showNodoConfig, setShowNodoConfig] = useState(false);
@@ -85,6 +87,10 @@ export default function App() {
   // Global Alerts
   const [globalAlerts, setGlobalAlerts] = useState([]);
   const [showGlobalAlerts, setShowGlobalAlerts] = useState(false);
+
+  // Advertencia de inactividad de sesión (29 mins)
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  const [timeoutCountdown, setTimeoutCountdown] = useState(60);
 
   // Ref para acceder a los nodos actuales desde dentro del socket (evita closures stale)
   const nodesRef = useRef([]);
@@ -99,9 +105,9 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    // 1. Invalidar la cookie HttpOnly en el servidor (la única forma correcta)
+    //Invalidar la cookie HttpOnly en el servidor 
     try { await apiLogout(); } catch { /* si falla el request, continuamos igual */ }
-    // 2. Limpiar estado local
+    //limpiar estado local
     sessionStorage.removeItem(SESSION_KEY);
     if (socket) { socket.disconnect(); socket = null; }
     setAuth(null);
@@ -112,7 +118,7 @@ export default function App() {
     setScreen("login");
   };
 
-  // ── Load all nodes ──────────────────────────────────
+  // cargar todos los nodos
   const loadNodes = useCallback(async () => {
     setLoadingNodes(true);
     setNodesError("");
@@ -129,7 +135,7 @@ export default function App() {
     }
   }, []);
 
-  // ── Load telemetry for one node (updates nodes array only, no selectedNode) ──
+  // Load telemetry for one node (updates nodes array only, no selectedNode)
   const loadTelemetrySilent = useCallback(async (node) => {
     try {
       const telemetry = await fetchTelemetria(node.id);
@@ -152,7 +158,7 @@ export default function App() {
     }
   }, []);
 
-  // ── Load telemetry for one node (updates selectedNode too) ───────────────────
+  // Load telemetry for one node (updates selectedNode too)
   const loadTelemetry = useCallback(async (node) => {
     setLoadingTelemetry(true);
     try {
@@ -163,7 +169,7 @@ export default function App() {
     }
   }, [loadTelemetrySilent]);
 
-  // ── WebSockets: listen for realtime telemetry ────────────────
+  //  WebSockets: listen for realtime telemetry 
   useEffect(() => {
     if (!auth?.user) return;
 
@@ -230,7 +236,7 @@ export default function App() {
     };
   }, [auth?.user]);
 
-  // ── On auth: load nodes, then telemetry for ALL nodes in parallel ──
+  //  On auth: load nodes, then telemetry for ALL nodes in parallel 
   useEffect(() => {
     if (!auth?.user) return;
 
@@ -251,7 +257,7 @@ export default function App() {
     fetchAlertas({ resuelta: false }).then(setGlobalAlerts).catch(console.error);
   }, [auth]);
 
-  // ── When selected node changes: load its telemetry ──
+  //  When selected node changes: load its telemetry 
   const prevSelectedId = useRef(null);
   useEffect(() => {
     if (!auth?.user || !selectedNode?.id) return;
@@ -261,10 +267,82 @@ export default function App() {
     loadTelemetry(selectedNode);
   }, [selectedNode?.id]);
 
-  // ── Permisos basados en rol ──────────────────────────
+  // Monitoreo de inactividad de sesión (Timeout de 30 mins) 
+  const lastActivityRef = useRef(Date.now());
+
+  useEffect(() => {
+    if (!auth) {
+      setShowTimeoutWarning(false);
+      return;
+    }
+
+    lastActivityRef.current = Date.now();
+
+    const handleUserActivity = () => {
+      if (!showTimeoutWarning) {
+        lastActivityRef.current = Date.now();
+      }
+    };
+
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart"];
+    events.forEach((ev) => window.addEventListener(ev, handleUserActivity));
+
+    // Revisar el estado de inactividad cada 5 segundos
+    const interval = setInterval(() => {
+      const inactiveMs = Date.now() - lastActivityRef.current;
+      const WARNING_TIME = 29 * 60 * 1000; // Advertencia a los 29 minutos
+      const LOGOUT_TIME = 30 * 60 * 1000;  // Auto-cierre a los 30 minutos
+
+      if (inactiveMs >= LOGOUT_TIME) {
+        handleLogout();
+        setShowTimeoutWarning(false);
+      } else if (inactiveMs >= WARNING_TIME) {
+        setShowTimeoutWarning(true);
+      }
+    }, 5000);
+
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
+      clearInterval(interval);
+    };
+  }, [auth, showTimeoutWarning]);
+
+  // Manejo del contador regresivo en el modal de advertencia (60 segundos)
+  useEffect(() => {
+    if (!showTimeoutWarning) return;
+
+    setTimeoutCountdown(60);
+
+    const countdownTimer = setInterval(() => {
+      setTimeoutCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownTimer);
+          handleLogout();
+          setShowTimeoutWarning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownTimer);
+  }, [showTimeoutWarning]);
+
+  // Función para extender la sesión (llama a checkSession en el backend para refrescar la cookie)
+  const handleExtendSession = async () => {
+    try {
+      await checkSession();
+    } catch (e) {
+      console.error("No se pudo extender la sesión en el servidor:", e);
+    }
+    lastActivityRef.current = Date.now();
+    setShowTimeoutWarning(false);
+  };
+
+  // permisos basados en roles
   const permissions = usePermissions(auth?.user?.rol);
 
-  // ── Screens without auth ───────────────────────────
+  // pantallas sin auth
   if (!auth && screen === "register") {
     return (
       <Register
@@ -280,7 +358,6 @@ export default function App() {
   if (nodesError) return <ErrorScreen message={nodesError} onRetry={() => loadNodes()} />;
   if (initializingTelemetry) return <LoadingScreen message="Sincronizando telemetría…" />;
 
-  // ── Helpers ────────────────────────────────────────
   const handleSelectNode = (node) => {
     if (node.id === selectedNode?.id) return;
     prevSelectedId.current = null; // allow reload
@@ -288,13 +365,44 @@ export default function App() {
     setView("dashboard");
   };
 
-  const nodeReady = selectedNode?.valores && selectedNode?.history;
+  const enrichedNodes = nodes.map(node => {
+    if (node.status === "inactivo") return node;
+    const hasUnresolvedAlert = globalAlerts?.some(a => a.nodo_id === node.id);
+    if (hasUnresolvedAlert) {
+      return { ...node, status: "alerta" };
+    }
+    // Verificar si la última lectura tiene parámetros fuera de rango
+    if (node.valores) {
+      const isOut = PARAMS.some(p => {
+        const l = NOM_127_LIMITS[p];
+        return node.valores[p] < l.min || node.valores[p] > l.max;
+      });
+      if (isOut) {
+        return { ...node, status: "alerta" };
+      }
+    }
+    return { ...node, status: "activo" };
+  });
+
+  const activeParams = PARAMS.filter((param) => {
+    return enrichedNodes.some((node) => {
+      if (!node || node.sinDatos) return false;
+      const hasHistoryValue = node.history?.[param]?.some(
+        (point) => point.value !== null && point.value !== undefined
+      );
+      const hasLatestValue = node.valores?.[param] !== null && node.valores?.[param] !== undefined;
+      return hasHistoryValue || hasLatestValue;
+    });
+  });
+
+  const enrichedSelectedNode = selectedNode ? enrichedNodes.find(n => n.id === selectedNode.id) || selectedNode : null;
+  const nodeReady = enrichedSelectedNode?.valores && enrichedSelectedNode?.history;
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
       <Header
-        nodes={nodes}
-        selectedNode={selectedNode}
+        nodes={enrichedNodes}
+        selectedNode={enrichedSelectedNode}
         onSelectNode={handleSelectNode}
         view={view}
         onViewChange={setView}
@@ -316,15 +424,16 @@ export default function App() {
           <SingleView
             loadingTelemetry={loadingTelemetry}
             nodeReady={nodeReady}
-            selectedNode={selectedNode}
+            selectedNode={enrichedSelectedNode}
             setExpandedParam={setExpandedParam}
             loadTelemetry={loadTelemetry}
+            activeParams={activeParams}
           />
         )}
 
         {view === "overview" && (
           <Overview
-            nodes={nodes}
+            nodes={enrichedNodes}
             globalAlerts={globalAlerts}
             canResolve={permissions.canResolveAlerts}
             onSelectNode={(node) => {
@@ -342,13 +451,15 @@ export default function App() {
                 console.error(e);
               }
             }}
+            onExpandParam={setExpandedOverviewParam}
+            activeParams={activeParams}
           />
         )}
 
         {view === "map" && (
           <NodeMap
-            nodes={nodes}
-            selectedNode={selectedNode}
+            nodes={enrichedNodes}
+            selectedNode={enrichedSelectedNode}
             onSelectNode={(node) => {
               setSelectedNode(node);
               if (!node.history || !node.valores) {
@@ -360,20 +471,29 @@ export default function App() {
         )}
 
         {view === "reportes" && permissions.canViewReports && (
-          <Reportes nodes={nodes} />
+          <Reportes nodes={enrichedNodes} />
         )}
       </main>
 
 
       {/* Expanded chart modal */}
-      {expandedParam && selectedNode && (
+      {expandedParam && enrichedSelectedNode && (
         <ExpandedChart
           param={expandedParam}
-          nodeId={selectedNode.id}
-          nodeName={selectedNode.node_id}
-          latestTimestamp={selectedNode.timestamp}
+          nodeId={enrichedSelectedNode.id}
+          nodeName={enrichedSelectedNode.node_id}
+          latestTimestamp={enrichedSelectedNode.timestamp}
           onClose={() => setExpandedParam(null)}
-          disabled={selectedNode.status === "inactivo"}
+          disabled={enrichedSelectedNode.status === "inactivo"}
+        />
+      )}
+
+      {/* Multi-node comparative chart modal */}
+      {expandedOverviewParam && (
+        <MultiNodeExpandedChart
+          param={expandedOverviewParam}
+          nodes={enrichedNodes}
+          onClose={() => setExpandedOverviewParam(null)}
         />
       )}
 
@@ -464,6 +584,60 @@ export default function App() {
             }
           }}
         />
+      )}
+
+      {/* Modal Advertencia de Inactividad (Timeout de sesión) */}
+      {showTimeoutWarning && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 border border-slate-100 transform scale-100 transition-all duration-300">
+
+            {/* Animated Warning Icon with pulses */}
+            <div className="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <span className="animate-ping absolute inline-flex h-12 w-12 rounded-full bg-amber-400 opacity-20"></span>
+              <div className="relative w-14 h-14 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center shadow-inner">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 8v4M12 16h.01M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
+              ¿Sigues ahí?
+            </h3>
+
+            <p className="text-xs text-slate-500 text-center mb-5 leading-relaxed">
+              Tu sesión está a punto de expirar debido a la inactividad. Se cerrará automáticamente en:
+            </p>
+
+            {/* Premium Countdown display */}
+            <div className="flex items-center justify-center gap-1.5 mb-6">
+              <div className="bg-slate-100 rounded-xl px-4 py-2 border border-slate-200 shadow-sm min-w-[80px] text-center">
+                <span className="font-mono text-xl font-extrabold text-amber-600">
+                  {timeoutCountdown < 10 ? `0${timeoutCountdown}` : timeoutCountdown}
+                </span>
+                <span className="text-[9px] block font-bold uppercase tracking-wider text-slate-400 mt-0.5">
+                  segundos
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleLogout}
+                className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 hover:text-slate-800 transition-all select-none active:scale-[0.98]"
+              >
+                Cerrar sesión
+              </button>
+              <button
+                onClick={handleExtendSession}
+                className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-buap-700 text-white text-xs font-semibold hover:bg-buap-800 transition-all shadow-md shadow-buap-700/20 select-none active:scale-[0.98]"
+              >
+                Continuar
+              </button>
+            </div>
+
+          </div>
+        </div>
       )}
     </div>
   );

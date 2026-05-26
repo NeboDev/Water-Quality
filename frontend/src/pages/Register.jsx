@@ -77,54 +77,6 @@ export default function Register({ onRegister, onGoLogin }) {
 
   return (
     <div className="min-h-screen flex">
-      {/* ── Left panel ── */}
-      <div className="hidden lg:flex w-[420px] flex-shrink-0 bg-buap-900 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-white/[0.03]" />
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-white/[0.03]" />
-
-        <div className="relative z-10 flex flex-col gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 2C11 10 5 13 5 21a11 11 0 0022 0c0-8-6-11-11-19z" fill="rgba(255,255,255,0.9)" />
-              <circle cx="16" cy="21" r="4" fill="rgba(255,255,255,0.2)" />
-              <circle cx="16" cy="21" r="2" fill="rgba(255,255,255,0.6)" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Kanan</h1>
-            <p className="text-sm text-white/55 mt-1 leading-relaxed">
-              Sistema de monitoreo de calidad del agua
-            </p>
-          </div>
-        </div>
-
-        {/* Info box */}
-        <div className="relative z-10 bg-white/[0.06] border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-          <p className="text-sm font-semibold text-white/80">¿Qué rol debo elegir?</p>
-          {[
-            { rol: "Administrador", desc: "Gestión completa del sistema, usuarios y configuración de nodos." },
-            { rol: "Investigador", desc: "Acceso a datos históricos, reportes y análisis de tendencias." },
-            { rol: "Técnico", desc: "Monitoreo en tiempo real y atención de alertas operativas." },
-          ].map((r) => (
-            <div key={r.rol} className="flex gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-buap-300 mt-1.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-white/70">{r.rol}</p>
-                <p className="text-xs text-white/40 leading-relaxed mt-0.5">{r.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="relative z-10">
-          <p className="text-xs text-white/30 leading-relaxed">
-            Benemérita Universidad Autónoma de Puebla<br />
-            Instituto de Ciencias · Facultad de Ciencias de la Computación
-          </p>
-        </div>
-      </div>
-
-      {/* ── Right panel ── */}
       <div className="flex-1 flex items-center justify-center bg-slate-50 px-6 py-10">
         <div className="w-full max-w-sm animate-fade-in">
 
