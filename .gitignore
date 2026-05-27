@@ -42,3 +42,21 @@ docker-compose.override.yml
 mosquitto/config/passwd
 mosquitto/config/acl_file
 mosquitto/certs
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

@@ -4,6 +4,7 @@ import Modal from "./common/Modal";
 import InputField from "./common/InputField";
 import Alert from "./common/Alert";
 import SuccessState from "./common/SuccessState";
+import { validateField } from "../utils/validations";
 
 const ROLES = [
   { value: "admin",       label: "Administrador",      desc: "Acceso total al sistema." },
@@ -20,22 +21,53 @@ const ROLE_COLORS = {
 };
 
 export default function UsuarioForm({ onSuccess, onClose }) {
-  const [form, setForm] = useState({ nombre: "", email: "", password: "", rol: "visualizador" });
+  const [form, setForm] = useState({ nombre: "", email: "", password: "", confirmPassword: "", rol: "visualizador" });
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [successMsg, setSuccessMsg] = useState(false);
 
   const set = (field) => (e) => {
-    setForm((f) => ({ ...f, [field]: e.target.value }));
-    setServerError("");
+    const val = e.target.value;
+    setForm((f) => {
+      const next = { ...f, [field]: val };
+      if (field === "confirmPassword" || field === "password") {
+        if (next.confirmPassword && next.password !== next.confirmPassword) {
+          setServerError("Las contraseñas no coinciden.");
+        } else {
+          setServerError("");
+        }
+      }
+      return next;
+    });
+    if (field !== "confirmPassword" && field !== "password") {
+      setServerError("");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.nombre.trim() || !form.email.trim() || !form.password.trim()) {
+    if (!form.nombre.trim() || !form.email.trim() || !form.password.trim() || !form.confirmPassword.trim()) {
       setServerError("Por favor completa todos los campos.");
       return;
     }
+
+    if (form.password !== form.confirmPassword) {
+      setServerError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    const emailErr = validateField("email", form.email.trim());
+    if (emailErr) {
+      setServerError(emailErr);
+      return;
+    }
+
+    const passwordErr = validateField("password", form.password);
+    if (passwordErr) {
+      setServerError(passwordErr);
+      return;
+    }
+
     setLoading(true);
     setServerError("");
     try {
@@ -53,7 +85,7 @@ export default function UsuarioForm({ onSuccess, onClose }) {
     }
   };
 
-  const canSubmit = form.nombre.trim() && form.email.trim() && form.password.trim() && !loading;
+  const canSubmit = form.nombre.trim() && form.email.trim() && form.password.trim() && form.confirmPassword.trim() && form.password === form.confirmPassword && !loading;
 
   return (
     <Modal
@@ -97,7 +129,7 @@ export default function UsuarioForm({ onSuccess, onClose }) {
             type="email"
             value={form.email}
             onChange={set("email")}
-            placeholder="correo@buap.mx"
+            placeholder="ejemplo@alumno.buap.mx"
             autoComplete="off"
             icon={
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -115,6 +147,24 @@ export default function UsuarioForm({ onSuccess, onClose }) {
             value={form.password}
             onChange={set("password")}
             placeholder="Mínimo 8 caracteres"
+            autoComplete="new-password"
+            icon={
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <rect x="3" y="6.5" width="9" height="7.5" rx="2" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M5 6.5V5a2.5 2.5 0 015 0v1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <circle cx="7.5" cy="10" r="1" fill="currentColor" />
+              </svg>
+            }
+          />
+
+          {/* Confirmar contraseña */}
+          <InputField
+            id="usr-confirm-password"
+            label="Confirmar contraseña *"
+            type="password"
+            value={form.confirmPassword}
+            onChange={set("confirmPassword")}
+            placeholder="Repite la contraseña"
             autoComplete="new-password"
             icon={
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">

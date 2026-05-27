@@ -246,6 +246,13 @@ router.delete('/:id', verificarToken, verificarRol('admin'), async (req, res) =>
     try {
         const { id } = req.params;
 
+        // 1. Eliminar alertas asociadas al nodo para evitar violar la clave foránea
+        await pool.query('DELETE FROM alertas WHERE nodo_id = $1', [id]);
+
+        // 2. Eliminar reportes asociados al nodo para evitar violar la clave foránea
+        await pool.query('DELETE FROM reportes_nom127 WHERE nodo_id = $1', [id]);
+
+        // 3. Eliminar el nodo (los umbrales se eliminan solos por el ON DELETE CASCADE)
         const result = await pool.query(
             'DELETE FROM nodos WHERE id = $1 RETURNING id, mac',
             [id]

@@ -11,7 +11,7 @@ const connectMongo = require('./config/mongo');
 const { connectPostgres } = require('./config/postgres');
 const runMigrations = require('./config/migrations');
 
-const iniciarMQTT = require('./services/mqttclient');
+const iniciarMQTT = require('./services/mqttClient');
 const { iniciarScheduler } = require('./services/muestraScheduler');
 
 const { setIO } = require('./services/socket');

@@ -6,8 +6,12 @@ export default function SingleView({
   selectedNode,
   setExpandedParam,
   loadTelemetry,
-  activeParams = []
+  activeParams = [],
+  globalAlerts = [],
+  onOpenAlerts
 }) {
+  const nodeAlertsCount = globalAlerts?.filter(a => a.nodo_id === selectedNode?.id).length || 0;
+
   return (
     <>
       {/* sin nodo seleccionado */}
@@ -34,7 +38,7 @@ export default function SingleView({
 
       {/* estado sin datos o error en la carga */}
       {!loadingTelemetry && selectedNode?.sinDatos && (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center animate-fade-in">
           <div className="flex flex-col items-center gap-4 max-w-xs text-center">
             <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -69,12 +73,15 @@ export default function SingleView({
       )}
 
       {nodeReady && (
-        <div className="flex-1 flex flex-col w-full max-w-[1600px] mx-auto overflow-y-auto custom-scrollbar pr-2 pb-4">
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 auto-rows-[minmax(0,1fr)]">
-            {activeParams.map((p, idx) => {
-              const isLastOdd = (activeParams.length % 2 !== 0) && (idx === activeParams.length - 1);
+        <div className={`flex-1 flex flex-col w-full pr-2 pb-4 relative lg:h-full lg:min-h-0 min-h-0 ${
+          activeParams.length <= 4
+            ? "lg:overflow-hidden"
+            : "overflow-y-auto custom-scrollbar"
+        }`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-fade-in h-full auto-rows-[240px] lg:auto-rows-[calc((100%-1.25rem)/2)]">
+            {activeParams.map((p) => {
               return (
-                <div key={p} className={isLastOdd ? "lg:col-span-2 h-full" : "h-full"}>
+                <div key={p} className="h-full">
                   <ParameterCard
                     param={p}
                     history={selectedNode.history[p]}
@@ -86,6 +93,7 @@ export default function SingleView({
               );
             })}
           </div>
+
         </div>
       )}
     </>

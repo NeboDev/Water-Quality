@@ -38,7 +38,7 @@ export default function ParameterCard({ param, history, currentValue, onExpand, 
 
   return (
     <div
-      className={`card-hover p-5 cursor-pointer group relative flex flex-col h-full ${isOut ? "border-red-300 bg-red-50/30" : ""
+      className={`card-hover p-5 cursor-pointer group relative flex flex-col h-full overflow-y-auto custom-scrollbar ${isOut ? "border-red-300 bg-red-50/30" : ""
         }`}
       onClick={onExpand}
       title="Clic para ver historial completo"
@@ -73,13 +73,14 @@ export default function ParameterCard({ param, history, currentValue, onExpand, 
 
       <div className="flex-1 min-h-[90px] w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <LineChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 25 }}>
             <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" />
             <XAxis
               dataKey="time"
               tick={{ fill: "#cbd5e1", fontSize: 9, fontFamily: "DM Sans" }}
               tickLine={false}
               interval={5}
+              height={20}
             />
             <YAxis
               domain={[yMin, yMax]}

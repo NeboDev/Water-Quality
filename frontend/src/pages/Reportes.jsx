@@ -130,9 +130,8 @@ export default function Reportes({ nodes }) {
     }
   };
 
-  //render
   return (
-    <div className="flex-1 w-full max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-5 overflow-y-auto lg:overflow-hidden min-h-0">
+    <div className="flex-1 w-full flex flex-col lg:flex-row gap-5 overflow-y-auto lg:overflow-hidden min-h-0">
 
       {/* ── Left panel: form ── */}
       <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-4">
@@ -243,28 +242,6 @@ export default function Reportes({ nodes }) {
               )}
             </button>
           </form>
-        </div>
-
-        {/* Info card */}
-        <div className="card p-4 border border-slate-100 bg-slate-50/80">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">¿Qué incluye el reporte?</p>
-          <ul className="text-[11px] text-slate-500 flex flex-col gap-1.5">
-            {[
-              "Resumen de parámetros medidos",
-              "Verificación contra límites NOM-127",
-              "Historial de alertas del periodo",
-              "Resultado de cumplimiento normativo",
-              "Datos del nodo y fecha de generación",
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-1.5">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="mt-0.5 flex-shrink-0">
-                  <circle cx="5" cy="5" r="4" fill="#e0e7ff" />
-                  <path d="M3 5l1.5 1.5L7 3.5" stroke="#4f46e5" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {item}
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 

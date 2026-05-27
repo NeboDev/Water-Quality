@@ -87,6 +87,17 @@ export default function App() {
   // Global Alerts
   const [globalAlerts, setGlobalAlerts] = useState([]);
   const [showGlobalAlerts, setShowGlobalAlerts] = useState(false);
+  const [alertsFilterNodeId, setAlertsFilterNodeId] = useState(null);
+
+  const handleOpenAlerts = (nodeId = null) => {
+    setAlertsFilterNodeId(nodeId);
+    setShowGlobalAlerts(true);
+  };
+
+  const handleSetShowGlobalAlerts = (val) => {
+    if (val) setAlertsFilterNodeId(null);
+    setShowGlobalAlerts(val);
+  };
 
   // Advertencia de inactividad de sesión (29 mins)
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
@@ -339,6 +350,18 @@ export default function App() {
     setShowTimeoutWarning(false);
   };
 
+  // Redirección automática si hay un solo nodo registrado
+  useEffect(() => {
+    if (nodes.length === 1) {
+      if (view === "overview") {
+        setView("dashboard");
+      }
+      if (nodes[0] && (!selectedNode || selectedNode.id !== nodes[0].id)) {
+        setSelectedNode(nodes[0]);
+      }
+    }
+  }, [nodes, view, selectedNode?.id]);
+
   // permisos basados en roles
   const permissions = usePermissions(auth?.user?.rol);
 
@@ -365,21 +388,12 @@ export default function App() {
     setView("dashboard");
   };
 
+  // ── Enriquecer nodos con status dinámico ──
   const enrichedNodes = nodes.map(node => {
     if (node.status === "inactivo") return node;
     const hasUnresolvedAlert = globalAlerts?.some(a => a.nodo_id === node.id);
     if (hasUnresolvedAlert) {
       return { ...node, status: "alerta" };
-    }
-    // Verificar si la última lectura tiene parámetros fuera de rango
-    if (node.valores) {
-      const isOut = PARAMS.some(p => {
-        const l = NOM_127_LIMITS[p];
-        return node.valores[p] < l.min || node.valores[p] > l.max;
-      });
-      if (isOut) {
-        return { ...node, status: "alerta" };
-      }
     }
     return { ...node, status: "activo" };
   });
@@ -416,7 +430,7 @@ export default function App() {
         onConfigNodes={() => setShowNodoConfig(true)}
         canViewReports={permissions.canViewReports}
         globalAlerts={globalAlerts}
-        setShowGlobalAlerts={setShowGlobalAlerts}
+        onOpenAlerts={handleOpenAlerts}
       />
 
       <main className="flex-1 flex gap-5 p-5 overflow-hidden animate-fade-in">
@@ -428,6 +442,8 @@ export default function App() {
             setExpandedParam={setExpandedParam}
             loadTelemetry={loadTelemetry}
             activeParams={activeParams}
+            globalAlerts={globalAlerts}
+            onOpenAlerts={handleOpenAlerts}
           />
         )}
 
@@ -453,6 +469,7 @@ export default function App() {
             }}
             onExpandParam={setExpandedOverviewParam}
             activeParams={activeParams}
+            onOpenAlerts={handleOpenAlerts}
           />
         )}
 
@@ -563,7 +580,7 @@ export default function App() {
       {/* Global Alerts Drawer */}
       {showGlobalAlerts && (
         <GlobalAlertsDrawer
-          alerts={globalAlerts}
+          alerts={alertsFilterNodeId ? globalAlerts.filter(a => a.nodo_id === alertsFilterNodeId) : globalAlerts}
           nodes={nodes}
           onClose={() => setShowGlobalAlerts(false)}
           canResolve={permissions.canResolveAlerts}
@@ -577,8 +594,11 @@ export default function App() {
           }}
           onResolveAll={async () => {
             try {
-              await Promise.all(globalAlerts.map(a => resolverAlerta(a.id)));
-              setGlobalAlerts([]);
+              const alertsToResolve = alertsFilterNodeId
+                ? globalAlerts.filter(a => a.nodo_id === alertsFilterNodeId)
+                : globalAlerts;
+              await Promise.all(alertsToResolve.map(a => resolverAlerta(a.id)));
+              setGlobalAlerts(prev => prev.filter(a => !alertsToResolve.some(r => r.id === a.id)));
             } catch (e) {
               console.error(e);
             }

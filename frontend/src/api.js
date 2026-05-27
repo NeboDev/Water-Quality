@@ -9,7 +9,12 @@ const api = axios.create({
 // Interceptor de respuesta — maneja errores de sesión globalmente
 // Si el backend devuelve 401 significa que la sesión expiró
 api.interceptors.response.use(
-  response => response,
+  response => {
+    if (response.data && response.data.success === false) {
+      return Promise.reject(new Error(response.data.mensaje || 'Error de autenticación'));
+    }
+    return response;
+  },
   error => {
     if (error.response?.status === 401) {
     }

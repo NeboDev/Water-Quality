@@ -40,8 +40,14 @@ export default function Header({
   canAddUser, onAddUser,
   canConfigNodes, onConfigNodes,
   canViewReports,
-  globalAlerts, setShowGlobalAlerts,
+  globalAlerts, onOpenAlerts,
 }) {
+  const isSingleView = view === "dashboard";
+  const filteredAlerts = isSingleView && selectedNode
+    ? globalAlerts?.filter(a => a.nodo_id === selectedNode.id) || []
+    : globalAlerts || [];
+  const alertsCount = filteredAlerts.length;
+
   const lastUpdate = selectedNode
     ? new Date(selectedNode.timestamp).toLocaleTimeString("es-MX")
     : "—";
@@ -178,64 +184,51 @@ export default function Header({
                 </div>
 
 
-                <div className="border-t border-slate-100 px-2 py-2 flex flex-col gap-1">
-
-                  {/* conexion al endpoint de configuracion de nodos */}
-                  <button
-                    disabled={!canConfigNodes}
-                    onClick={() => { if (canConfigNodes) { setNodeMenuOpen(false); onConfigNodes(); } }}
-                    title={!canConfigNodes ? "Solo el Administrador puede configurar nodos" : undefined}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canConfigNodes ? "hover:bg-slate-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                      }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canConfigNodes ? "bg-slate-100" : "bg-slate-100"}`}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <circle cx="7" cy="7" r="2" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.3" />
-                        <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.1 3.1l.7.7M10.2 10.2l.7.7M10.2 3.8l-.7.7M3.8 10.2l-.7.7" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.1" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                        Configuración de nodos
-                        {!canConfigNodes && (
-                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                            <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                            <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+                {(canConfigNodes || canAddNode) && (
+                  <div className="border-t border-slate-100 px-2 py-2 flex flex-col gap-1">
+                    {/* conexion al endpoint de configuracion de nodos */}
+                    {canConfigNodes && (
+                      <button
+                        onClick={() => { setNodeMenuOpen(false); onConfigNodes(); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 hover:bg-slate-50 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <circle cx="7" cy="7" r="2" stroke="#475569" strokeWidth="1.3" />
+                            <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.1 3.1l.7.7M10.2 10.2l.7.7M10.2 3.8l-.7.7M3.8 10.2l-.7.7" stroke="#475569" strokeWidth="1.1" strokeLinecap="round" />
                           </svg>
-                        )}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Editar, activar o eliminar nodos</p>
-                    </div>
-                  </button>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">
+                            Configuración de nodos
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Editar, activar o eliminar nodos</p>
+                        </div>
+                      </button>
+                    )}
 
-                  {/* add node */}
-                  <button
-                    disabled={!canAddNode}
-                    onClick={() => { if (canAddNode) { setNodeMenuOpen(false); onAddNode(); } }}
-                    title={!canAddNode ? "Solo el Administrador puede registrar nodos" : undefined}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canAddNode ? "hover:bg-buap-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                      }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canAddNode ? "bg-buap-100" : "bg-slate-100"}`}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <rect x="2" y="2" width="10" height="10" rx="2" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" />
-                        <path d="M7 5v4M5 7h4" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                        Registrar nuevo nodo
-                        {!canAddNode && (
-                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                            <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                            <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+                    {/* add node */}
+                    {canAddNode && (
+                      <button
+                        onClick={() => { setNodeMenuOpen(false); onAddNode(); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 hover:bg-buap-50 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-buap-100">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <rect x="2" y="2" width="10" height="10" rx="2" stroke="#2333ce" strokeWidth="1.3" />
+                            <path d="M7 5v4M5 7h4" stroke="#2333ce" strokeWidth="1.3" strokeLinecap="round" />
                           </svg>
-                        )}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Agregar sensor IoT al sistema</p>
-                    </div>
-                  </button>
-                </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">
+                            Registrar nuevo nodo
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Agregar sensor IoT al sistema</p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -247,7 +240,7 @@ export default function Header({
       {/* toggle para pantallas pequenias*/}
       {(() => {
         const viewOptions = [
-          {
+          ...(nodes.length > 1 ? [{
             id: "overview", title: "Vista general",
             icon: (
               <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
@@ -256,7 +249,7 @@ export default function Header({
                 <rect x="11" y="1" width="3" height="13" rx="0.5" />
               </svg>
             ),
-          },
+          }] : []),
           {
             id: "dashboard", title: "Métricas por nodo",
             icon: (
@@ -363,19 +356,27 @@ export default function Header({
 
       <div className="hidden sm:block w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
 
-      {/* campana de alertas */}
+      {/* campana de alertas contextual */}
       <button
-        onClick={() => setShowGlobalAlerts(true)}
-        className="relative p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
-        title="Ver alertas"
+        onClick={() => onOpenAlerts?.(isSingleView && selectedNode ? selectedNode.id : null)}
+        className="relative flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0 border border-slate-200 shadow-sm"
+        title={isSingleView && selectedNode ? "Ver alertas de este nodo" : "Ver todas las alertas"}
       >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M10 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 003 15h14a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" fill="currentColor" />
-        </svg>
-        {globalAlerts?.length > 0 && (
-          <span className="absolute top-1.5 right-1.5 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+        <div className="relative flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-slate-500">
+            <path d="M10 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 003 15h14a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" fill="currentColor" />
+          </svg>
+          {alertsCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-bold text-slate-600 hidden sm:inline">Alertas</span>
+        {alertsCount > 0 && (
+          <span className="bg-red-50 text-red-600 border border-red-100 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full leading-none flex items-center justify-center min-w-[16px] h-4">
+            {alertsCount}
           </span>
         )}
       </button>
@@ -419,94 +420,33 @@ export default function Header({
               </div>
 
               {/* Acciones */}
-              <div className="px-2 py-2 flex flex-col gap-1">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 px-2 mb-1.5">Administración</p>
+              {(canAddUser || canConfigNodes || canAddNode) && (
+                <div className="px-2 py-2 flex flex-col gap-1">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 px-2 mb-1.5">Administración</p>
 
-                {/* Nuevo usuario */}
-                <button
-                  disabled={!canAddUser}
-                  onClick={() => canAddUser && handleUserAction(onAddUser)}
-                  title={!canAddUser ? "Solo el Administrador puede crear usuarios" : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canAddUser ? "hover:bg-buap-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                    }`}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canAddUser ? "bg-violet-100" : "bg-slate-100"}`}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="5.5" cy="4.5" r="2" stroke={canAddUser ? "#7c3aed" : "#94a3b8"} strokeWidth="1.3" />
-                      <path d="M1.5 11.5c0-2 1.8-3.5 4-3.5" stroke={canAddUser ? "#7c3aed" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                      <path d="M10 8v4M8 10h4" stroke={canAddUser ? "#7c3aed" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                      Nuevo usuario
-                      {!canAddUser && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                          <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+                  {/* Nuevo usuario */}
+                  {canAddUser && (
+                    <button
+                      onClick={() => handleUserAction(onAddUser)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 hover:bg-buap-50 cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-violet-100">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <circle cx="5.5" cy="4.5" r="2" stroke="#7c3aed" strokeWidth="1.3" />
+                          <path d="M1.5 11.5c0-2 1.8-3.5 4-3.5" stroke="#7c3aed" strokeWidth="1.3" strokeLinecap="round" />
+                          <path d="M10 8v4M8 10h4" stroke="#7c3aed" strokeWidth="1.3" strokeLinecap="round" />
                         </svg>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Crear cuenta y asignar rol</p>
-                  </div>
-                </button>
-
-                {/* Configuración de nodos */}
-                <button
-                  disabled={!canConfigNodes}
-                  onClick={() => canConfigNodes && handleUserAction(onConfigNodes)}
-                  title={!canConfigNodes ? "Solo el Administrador puede configurar nodos" : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canConfigNodes ? "hover:bg-slate-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                    }`}
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="2" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.3" />
-                      <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.1 3.1l.7.7M10.2 10.2l.7.7M10.2 3.8l-.7.7M3.8 10.2l-.7.7" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.1" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                      Configuración de nodos
-                      {!canConfigNodes && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                          <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
-                        </svg>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Editar, activar o eliminar nodos</p>
-                  </div>
-                </button>
-
-                {/* Registrar nuevo nodo */}
-                <button
-                  disabled={!canAddNode}
-                  onClick={() => canAddNode && handleUserAction(onAddNode)}
-                  title={!canAddNode ? "Solo el Administrador puede registrar nodos" : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canAddNode ? "hover:bg-buap-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                    }`}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canAddNode ? "bg-buap-100" : "bg-slate-100"}`}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <rect x="2" y="2" width="10" height="10" rx="2" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" />
-                      <path d="M7 5v4M5 7h4" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                      Registrar nuevo nodo
-                      {!canAddNode && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                          <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
-                        </svg>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Agregar sensor IoT al sistema</p>
-                  </div>
-                </button>
-              </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-800">
+                          Nuevo usuario
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Crear cuenta y asignar rol</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Cerrar sesión */}
               <div className="px-2 pb-2 border-t border-slate-100 pt-2">

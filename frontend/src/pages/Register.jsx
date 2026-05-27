@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { validateField } from "../utils/validations";
+import api from "../api";
 
 export default function Register({ onRegister, onGoLogin }) {
-  const [form, setForm] = useState({ nombreUsuario: "", email: "", password: "", rol: "visualizador" });
-  const [fieldErrors, setFieldErrors] = useState({ nombreUsuario: "", email: "", password: "" });
+  const [form, setForm] = useState({ nombreUsuario: "", email: "", password: "", confirmPassword: "", rol: "visualizador" });
+  const [fieldErrors, setFieldErrors] = useState({ nombreUsuario: "", email: "", password: "", confirmPassword: "" });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,12 +15,22 @@ export default function Register({ onRegister, onGoLogin }) {
 
   const handleChange = (field) => (e) => {
     const value = e.target.value;
-    setForm((f) => ({ ...f, [field]: value }));
+    const updatedForm = { ...form, [field]: value };
+    setForm(updatedForm);
     setError("");
+
+    const fieldErr = validateField(field, value);
+    let confirmErr = "";
+    if (field === "confirmPassword") {
+      confirmErr = value !== form.password ? "Las contraseñas no coinciden." : "";
+    } else if (field === "password" && form.confirmPassword) {
+      confirmErr = form.confirmPassword !== value ? "Las contraseñas no coinciden." : "";
+    }
 
     setFieldErrors((prev) => ({
       ...prev,
-      [field]: validateField(field, value),
+      [field]: fieldErr,
+      confirmPassword: field === "password" && form.confirmPassword ? confirmErr : (field === "confirmPassword" ? confirmErr : prev.confirmPassword),
     }));
   };
 
@@ -30,12 +41,14 @@ export default function Register({ onRegister, onGoLogin }) {
     const nErr = validateField("nombreUsuario", form.nombreUsuario);
     const eErr = validateField("email", form.email);
     const pErr = validateField("password", form.password);
+    const cpErr = form.password !== form.confirmPassword ? "Las contraseñas no coinciden." : "";
 
-    if (nErr || eErr || pErr || !form.nombreUsuario.trim() || !form.email.trim() || !form.password.trim()) {
+    if (nErr || eErr || pErr || cpErr || !form.nombreUsuario.trim() || !form.email.trim() || !form.password.trim() || !form.confirmPassword.trim()) {
       setFieldErrors({
         nombreUsuario: nErr || (!form.nombreUsuario.trim() ? "Requerido" : ""),
         email: eErr || (!form.email.trim() ? "Requerido" : ""),
         password: pErr || (!form.password.trim() ? "Requerido" : ""),
+        confirmPassword: cpErr || (!form.confirmPassword.trim() ? "Requerido" : ""),
       });
       setError("Por favor, corrige los errores antes de continuar.");
       return;
@@ -45,24 +58,14 @@ export default function Register({ onRegister, onGoLogin }) {
     setError("");
 
     try {
-      const res = await fetch("/api/v1/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre: form.nombreUsuario.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          rol: form.rol,
-        }),
+      const res = await api.post("/auth/register", {
+        nombre: form.nombreUsuario.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        rol: form.rol,
       });
 
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.mensaje || "No se pudo completar el registro.");
-      }
-
-      setUserData(data.usuario);
+      setUserData(res.data.usuario);
       setSuccess(true);
 
     } catch (err) {
@@ -72,8 +75,8 @@ export default function Register({ onRegister, onGoLogin }) {
     }
   };
 
-  const hasErrors = fieldErrors.nombreUsuario || fieldErrors.email || fieldErrors.password;
-  const canSubmit = form.nombreUsuario.trim() && form.email.trim() && form.password.trim() && !hasErrors && !loading;
+  const hasErrors = fieldErrors.nombreUsuario || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword;
+  const canSubmit = form.nombreUsuario.trim() && form.email.trim() && form.password.trim() && form.confirmPassword.trim() && !hasErrors && !loading;
 
   return (
     <div className="min-h-screen flex">
@@ -164,7 +167,7 @@ export default function Register({ onRegister, onGoLogin }) {
                         type="email"
                         value={form.email}
                         onChange={handleChange("email")}
-                        placeholder="correo@ejemplo.com"
+                        placeholder="ejemplo@alumno.buap.mx"
                         className={`input-base pl-10 ${fieldErrors.email ? "border-red-400 focus:border-red-500 focus:ring-red-100" : ""}`}
                         autoComplete="email"
                       />
@@ -219,19 +222,49 @@ export default function Register({ onRegister, onGoLogin }) {
                     )}
                   </div>
 
-                  {/* account type */}
-                  <div className="flex items-center gap-2.5 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl mt-1">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-slate-400 flex-shrink-0">
-                      <circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
-                      <path d="M1.5 12c0-2.5 2.46-4 5.5-4s5.5 1.5 5.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                    </svg>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-slate-700">Cuenta Visualizador</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Acceso de solo lectura a telemetría y mapas.</p>
+                  {/* confirm password */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="label-sm" htmlFor="reg-confirm-password-input">Confirmar contraseña</label>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                          <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                          <circle cx="8" cy="11" r="1.2" fill="currentColor" />
+                        </svg>
+                      </span>
+                      <input
+                        id="reg-confirm-password-input"
+                        type={showPass ? "text" : "password"}
+                        value={form.confirmPassword}
+                        onChange={handleChange("confirmPassword")}
+                        placeholder="Repite la contraseña"
+                        className={`input-base pl-10 pr-11 ${fieldErrors.confirmPassword ? "border-red-400 focus:border-red-500 focus:ring-red-100" : ""}`}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPass((v) => !v)}
+                        className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded"
+                        tabIndex={-1}
+                      >
+                        {showPass ? (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
+                            <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+                            <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
+                            <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
-                    <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500">
-                      Visualizador
-                    </span>
+                    {fieldErrors.confirmPassword && (
+                      <p className="text-[10px] text-red-500 font-medium px-1">{fieldErrors.confirmPassword}</p>
+                    )}
                   </div>
 
                   {/* server glbal erro */}

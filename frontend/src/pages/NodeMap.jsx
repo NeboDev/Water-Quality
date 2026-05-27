@@ -75,13 +75,6 @@ function buildIcon(L, color, isSelected, isDraggable) {
 
 function getNodeColor(node) {
   if (node.status === "inactivo") return STATUS_COLOR.inactivo;
-  if (node.valores) {
-    const isOut = PARAMS.some((p) => {
-      const l = NOM_127_LIMITS[p];
-      return node.valores[p] < l.min || node.valores[p] > l.max;
-    });
-    if (isOut) return STATUS_COLOR.alerta;
-  }
   return STATUS_COLOR[node.status] || STATUS_COLOR.activo;
 }
 
@@ -289,17 +282,17 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
       {/* node list left sidebar */}
       <div
         className={`
-          flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar flex-shrink-0
+          flex flex-col gap-3 flex-shrink-0 min-h-0
           transition-all duration-300 ease-out
           ${showSidebar
             ? "translate-x-0 opacity-100"
             : "-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100"
           }
-          fixed inset-y-4 left-4 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/80 z-[1020] p-4
-          lg:static lg:w-72 lg:bg-transparent lg:shadow-none lg:border-none lg:p-0 lg:h-auto lg:z-auto
+          fixed inset-y-4 left-4 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/80 z-[1020] p-4
+          lg:static lg:w-72 lg:bg-transparent lg:shadow-none lg:border-none lg:p-0 lg:h-full lg:z-auto
         `}
       >
-        <div className="sticky top-0 bg-white/90 lg:bg-transparent py-2 z-10 border-b border-slate-200 mb-1 flex items-center justify-between">
+        <div className="bg-white lg:bg-slate-50 py-2 z-10 border-b border-slate-200 mb-1 flex items-center justify-between flex-shrink-0">
           <h2 className="text-sm font-bold text-buap-900">
             Nodos registrados ({nodes.length})
           </h2>
@@ -314,7 +307,7 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
           </button>
         </div>
         
-        <div className="flex flex-col gap-3 px-1 pb-1">
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 px-1 pt-2 pb-1">
           {nodes.length === 0 ? (
             <div className="p-4 text-center flex flex-col items-center gap-2 mt-2 text-slate-400">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">

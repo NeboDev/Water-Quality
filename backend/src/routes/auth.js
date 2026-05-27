@@ -53,7 +53,7 @@ router.post('/register', async (req, res) => {
         // Valida el body contra el esquema definido arriba
         const { error, value } = registerSchema.validate(req.body);
         if (error) {
-            return res.status(400).json({ mensaje: error.details[0].message });
+            return res.status(200).json({ success: false, mensaje: error.details[0].message });
         }
 
         const { nombre, email, password, rol } = value;
@@ -63,7 +63,7 @@ router.post('/register', async (req, res) => {
             [email]
         );
         if (existe.rows.length > 0) {
-            return res.status(409).json({ mensaje: 'El email ya está registrado' });
+            return res.status(200).json({ success: false, mensaje: 'El email ya está registrado' });
         }
 
         const password_hash = await bcrypt.hash(password, 10);
@@ -120,7 +120,7 @@ router.post('/login', async (req, res) => {
     try {
         const { error, value } = loginSchema.validate(req.body);
         if (error) {
-            return res.status(400).json({ mensaje: error.details[0].message });
+            return res.status(200).json({ success: false, mensaje: error.details[0].message });
         }
 
         const { email, password } = value;
@@ -130,14 +130,14 @@ router.post('/login', async (req, res) => {
             [email]
         );
         if (result.rows.length === 0) {
-            return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
+            return res.status(200).json({ success: false, mensaje: 'Credenciales incorrectas' });
         }
 
         const usuario = result.rows[0];
 
         const passwordValido = await bcrypt.compare(password, usuario.password_hash);
         if (!passwordValido) {
-            return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
+            return res.status(200).json({ success: false, mensaje: 'Credenciales incorrectas' });
         }
 
         const token = jwt.sign(

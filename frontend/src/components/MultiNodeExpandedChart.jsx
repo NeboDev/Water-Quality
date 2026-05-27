@@ -213,7 +213,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
           {!loading && !error && (
             <>
               {/* tabla de comparacion */}
-              <div className="w-full overflow-x-auto border border-slate-100 rounded-2xl">
+              <div className="w-full overflow-x-auto overflow-y-hidden border border-slate-100 rounded-2xl flex-shrink-0">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-100">
@@ -271,7 +271,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
               </div>
 
               {/* contenedor de grafica*/}
-              <div className="flex-1 flex flex-col min-h-[300px]">
+              <div className="flex-shrink-0 flex flex-col min-h-[300px]">
                 <div className="flex items-center justify-between mb-3 text-xs text-slate-400 font-medium">
                   <p>Normativa NOM-127: {limits.min} – {limits.max} {limits.unit || "—"}</p>
                   <div className="flex items-center gap-4">

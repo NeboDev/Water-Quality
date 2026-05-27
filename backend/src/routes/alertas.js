@@ -92,7 +92,7 @@ router.get('/', verificarToken, async (req, res) => {
 
         const result = await pool.query(
             `SELECT
-         a.id, a.parametro, a.valor_leido, a.valor_min, a.valor_max,
+         a.id, a.nodo_id, a.parametro, a.valor_leido, a.valor_min, a.valor_max,
          a.resuelta, a.creado_en,
          n.mac, n.ubicacion
        FROM alertas a

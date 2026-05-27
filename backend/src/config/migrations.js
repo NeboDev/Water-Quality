@@ -58,7 +58,7 @@ async function runMigrations() {
         await pool.query(`
       CREATE TABLE IF NOT EXISTS reportes_nom127 (
         id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        nodo_id        UUID NOT NULL REFERENCES nodos(id),
+        nodo_id        UUID NOT NULL REFERENCES nodos(id) ON DELETE CASCADE,
         generado_por   UUID NOT NULL REFERENCES usuarios(id),
         fecha          DATE NOT NULL DEFAULT CURRENT_DATE,
         cumple_nom     BOOLEAN NOT NULL,
@@ -72,7 +72,7 @@ async function runMigrations() {
         await pool.query(`
       CREATE TABLE IF NOT EXISTS alertas (
         id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        nodo_id       UUID NOT NULL REFERENCES nodos(id),
+        nodo_id       UUID NOT NULL REFERENCES nodos(id) ON DELETE CASCADE,
         parametro     VARCHAR(20) NOT NULL,
         valor_leido   NUMERIC(10,4) NOT NULL,
         valor_min     NUMERIC(10,4) NOT NULL,
