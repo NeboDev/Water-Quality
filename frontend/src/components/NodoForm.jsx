@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { registrarNodo } from "../api";
+import { registrarNodo, editarUmbralesDeNodo } from "../api";
 import Modal from "./common/Modal";
 import InputField from "./common/InputField";
 import Alert from "./common/Alert";
@@ -8,6 +8,14 @@ import SuccessState from "./common/SuccessState";
 // validaciones del lado del cliente
 const MAC_REGEX = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
 
+const DEFAULTS = {
+  ph: { valor_min: 6.5, valor_max: 8.5 },
+  turbidez: { valor_min: 0, valor_max: 5 },
+  conductividad: { valor_min: 0, valor_max: 1500 },
+  temperatura: { valor_min: 0, valor_max: 40 },
+  tds: { valor_min: 0, valor_max: 1000 }
+};
+
 export default function NodoForm({ onSuccess, onClose }) {
   const [form, setForm] = useState({ mac: "", ubicacion: "", version_fw: "" });
   const [errors, setErrors] = useState({});
@@ -15,6 +23,7 @@ export default function NodoForm({ onSuccess, onClose }) {
   const [serverError, setServerError] = useState("");
   const [successData, setSuccessData] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [umbralesForm, setUmbralesForm] = useState(DEFAULTS);
 
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -55,6 +64,10 @@ export default function NodoForm({ onSuccess, onClose }) {
         ...(form.version_fw.trim() && { version_fw: form.version_fw.trim() }),
       };
       const data = await registrarNodo(payload);
+      
+      // Guardar umbrales individuales en el nuevo nodo
+      await editarUmbralesDeNodo(data.nodo.id, umbralesForm);
+
       setSuccessData(data.nodo);
     } catch (err) {
       setServerError(err.message || "Error al registrar el nodo.");
@@ -80,7 +93,7 @@ export default function NodoForm({ onSuccess, onClose }) {
           onConfirm={() => onSuccess(successData)}
         />
       ) : (
-        <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* MAC */}
           <InputField
             id="nodo-mac"
@@ -103,47 +116,111 @@ export default function NodoForm({ onSuccess, onClose }) {
             error={errors.ubicacion}
           />
 
-          {/* Opciones avanzadas (por ahora unicamente la version del fw que no lo veia necesario pero weno) */}
-          <div className="border-t border-slate-100 pt-3.5 mt-1">
+          {/* Opciones avanzadas (Versión de Firmware y Umbrales) */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden mt-1">
             <button
               type="button"
               onClick={() => setShowAdvanced((prev) => !prev)}
-              className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-wider focus:outline-none"
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100/80 transition-colors text-left focus:outline-none"
             >
-              <span>Opciones avanzadas</span>
+              <div>
+                <p className="text-xs font-bold text-slate-700">Opciones avanzadas</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Configurar firmware y umbrales de alerta</p>
+              </div>
               <svg
                 width="12"
                 height="12"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="3"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`transition-transform duration-200 ${showAdvanced ? "rotate-180 text-buap-500" : "text-slate-400"
-                  }`}
+                className={`text-slate-400 transition-transform duration-200 ${showAdvanced ? "rotate-180 text-buap-500" : ""}`}
               >
-                <polyline points="6 9 12 15 18 9"></polyline>
+                <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
 
             {showAdvanced && (
-              <div className="mt-3 animate-fade-in">
+              <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-4 animate-fade-in">
                 {/* Versión FW (opcional) */}
-                <InputField
-                  id="nodo-fw"
-                  label={
-                    <>
-                      Versión firmware
-                      <span className="ml-1.5 text-[10px] font-normal text-slate-400">(opcional)</span>
-                    </>
-                  }
-                  type="text"
-                  value={form.version_fw}
-                  onChange={set("version_fw")}
-                  placeholder="1.0.0"
-                  error={errors.version_fw}
-                />
+                <div className="flex flex-col gap-1.5 pb-3 border-b border-slate-100">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide" htmlFor="nodo-fw">
+                    Versión firmware
+                    <span className="ml-1.5 text-[10px] font-normal text-slate-400 font-sans lowercase">(opcional)</span>
+                  </label>
+                  <input
+                    id="nodo-fw"
+                    type="text"
+                    value={form.version_fw}
+                    onChange={set("version_fw")}
+                    className="input-base font-mono h-8.5 py-1.5 text-xs bg-slate-50/50"
+                    placeholder="1.0.0"
+                  />
+                  {errors.version_fw && (
+                    <p className="text-[10px] text-red-500 font-medium">{errors.version_fw}</p>
+                  )}
+                </div>
+
+                {/* Configuración de Umbrales */}
+                <div>
+                  <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                    Configurar Umbrales de Alerta
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Modifica los valores límites de alerta iniciales para este nodo. Si una lectura sale de este rango, se detonará una alerta inmediata.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {Object.entries(umbralesForm).map(([param, limites]) => {
+                    const labels = {
+                      ph: { label: "pH", unit: "" },
+                      temperatura: { label: "Temperatura", unit: "°C" },
+                      conductividad: { label: "Conductividad", unit: "µS/cm" },
+                      turbidez: { label: "Turbidez", unit: "NTU" },
+                      tds: { label: "TDS", unit: "mg/L" }
+                    };
+                    const pInfo = labels[param] || { label: param, unit: "" };
+                    return (
+                      <div key={param} className="flex items-center justify-between gap-4 py-1.5 border-b border-slate-50 last:border-0">
+                        <div className="min-w-[100px]">
+                          <p className="text-xs font-semibold text-slate-700">{pInfo.label}</p>
+                          {pInfo.unit && <p className="text-[9px] text-slate-400 font-mono">{pInfo.unit}</p>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">Mín:</span>
+                            <input
+                              type="number"
+                              step="any"
+                              value={limites.valor_min}
+                              onChange={(e) => setUmbralesForm(prev => ({
+                                ...prev,
+                                [param]: { ...prev[param], valor_min: parseFloat(e.target.value) || 0 }
+                              }))}
+                              className="w-16 input-base text-xs text-center py-1 px-1.5 h-8 font-mono bg-slate-50/50"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">Máx:</span>
+                            <input
+                              type="number"
+                              step="any"
+                              value={limites.valor_max}
+                              onChange={(e) => setUmbralesForm(prev => ({
+                                ...prev,
+                                [param]: { ...prev[param], valor_max: parseFloat(e.target.value) || 0 }
+                              }))}
+                              className="w-16 input-base text-xs text-center py-1 px-1.5 h-8 font-mono bg-slate-50/50"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

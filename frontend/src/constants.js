@@ -40,7 +40,7 @@ export function buildHistory(telemetry, limit = null) {
 }
 
 // Build a full node object by merging API data sources
-export function buildNode(apiNodo) {
+export function buildNode(apiNodo, umbrales = null) {
   return {
     id: apiNodo.id,
     node_id: "Nodo " + apiNodo.mac.slice(-5),
@@ -54,6 +54,7 @@ export function buildNode(apiNodo) {
     valores: null,
     history: null,
     fullHistory: null,
+    umbrales: umbrales,                               // Store backend custom thresholds
     x: Math.floor(Math.random() * 70) + 15,
     y: Math.floor(Math.random() * 60) + 15,
   };

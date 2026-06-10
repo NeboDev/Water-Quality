@@ -10,13 +10,14 @@ import MultiNodeExpandedChart from "./components/MultiNodeExpandedChart";
 import NodoForm from "./components/NodoForm";
 import UsuarioForm from "./components/UsuarioForm";
 import NodoConfig from "./components/NodoConfig";
+import MuestraModal from "./components/MuestraModal";
 import GlobalAlertsDrawer from "./components/GlobalAlertsDrawer";
 import Overview from "./pages/Overview";
 import Reportes from "./pages/Reportes";
 import SingleView from "./pages/SingleView";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { buildNode, buildHistory, telemetryToPoint, PARAMS, NOM_127_LIMITS } from "./constants";
-import { fetchNodos, fetchTelemetria, fetchAlertas, resolverAlerta, logout as apiLogout } from "./api";
+import { fetchNodos, fetchUmbrales, fetchTelemetria, fetchAlertas, resolverAlerta, logout as apiLogout } from "./api";
 import { io } from "socket.io-client";
 import { usePermissions } from "./hooks/usePermissions";
 
@@ -83,6 +84,7 @@ export default function App() {
   const [showNodoForm, setShowNodoForm] = useState(false);
   const [showUsuarioForm, setShowUsuarioForm] = useState(false);
   const [showNodoConfig, setShowNodoConfig] = useState(false);
+  const [showMuestraModal, setShowMuestraModal] = useState(null);
 
   // Global Alerts
   const [globalAlerts, setGlobalAlerts] = useState([]);
@@ -134,8 +136,14 @@ export default function App() {
     setLoadingNodes(true);
     setNodesError("");
     try {
-      const nodosData = await fetchNodos();
-      const built = nodosData.map((n) => buildNode(n));
+      const [nodosData, umbralesData] = await Promise.all([
+        fetchNodos(),
+        fetchUmbrales().catch(() => []) // Fallback in case of database sync latency or restricted permissions
+      ]);
+      const built = nodosData.map((n) => {
+        const matchingUmbrales = umbralesData.find((u) => u.nodo_id === n.id);
+        return buildNode(n, matchingUmbrales?.umbrales);
+      });
       setNodes(built);
       return built;
     } catch (err) {
@@ -444,6 +452,7 @@ export default function App() {
             activeParams={activeParams}
             globalAlerts={globalAlerts}
             onOpenAlerts={handleOpenAlerts}
+            onRegisterSample={() => setShowMuestraModal(enrichedSelectedNode)}
           />
         )}
 
@@ -502,6 +511,7 @@ export default function App() {
           latestTimestamp={enrichedSelectedNode.timestamp}
           onClose={() => setExpandedParam(null)}
           disabled={enrichedSelectedNode.status === "inactivo"}
+          umbrales={enrichedSelectedNode.umbrales}
         />
       )}
 
@@ -555,6 +565,7 @@ export default function App() {
                         version_firmware: nodoActualizado.version_fw,
                         // Recalcular status desde el boolean activo del backend
                         status: nodoActualizado.activo ? "activo" : "inactivo",
+                        umbrales: nodoActualizado.umbrales || n.umbrales,
                       }
                       : n
                   )
@@ -567,6 +578,7 @@ export default function App() {
                       ubicacion: nodoActualizado.ubicacion,
                       version_firmware: nodoActualizado.version_fw,
                       status: nodoActualizado.activo ? "activo" : "inactivo",
+                      umbrales: nodoActualizado.umbrales || prev.umbrales,
                     };
                   }
                   return prev;
@@ -603,6 +615,15 @@ export default function App() {
               console.error(e);
             }
           }}
+        />
+      )}
+
+      {/* Registro de Muestra Oficial ICUAP */}
+      {showMuestraModal && (
+        <MuestraModal
+          node={showMuestraModal}
+          onClose={() => setShowMuestraModal(null)}
+          onSuccess={() => setShowMuestraModal(null)}
         />
       )}
 

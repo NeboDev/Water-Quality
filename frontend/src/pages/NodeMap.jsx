@@ -82,22 +82,26 @@ function getNodeColor(node) {
 function buildPopupHTML(node, color) {
   const vals = node.valores;
   const isOut = (param) => {
-    if (!vals) return false;
+    if (!vals || vals[param] === undefined || vals[param] === null) return false;
     const l = NOM_127_LIMITS[param];
     return vals[param] < l.min || vals[param] > l.max;
   };
-  const paramRows = vals ? PARAMS.map((p) => {
-    const l = NOM_127_LIMITS[p];
-    const out = isOut(p);
-    return `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f1f5f9;">
-        <span style="font-size:11px;color:#64748b;font-family:DM Sans,sans-serif;">${l.label}</span>
-        <span style="font-size:12px;font-weight:600;font-family:JetBrains Mono,monospace;color:${out ? "#dc2626" : "#1e3a8a"};">
-          ${vals[p]} <span style="font-size:10px;font-weight:400;color:#94a3b8;">${l.unit}</span>
-          ${out ? '<span style="margin-left:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:1px 5px;border-radius:4px;font-size:9px;">!</span>' : ""}
-        </span>
-      </div>`;
-  }).join("") : `<p style="font-size:11px;color:#94a3b8;padding:8px 0;">Sin datos de telemetría</p>`;
+  
+  const activeParams = vals ? PARAMS.filter((p) => vals[p] !== undefined && vals[p] !== null) : [];
+  const paramRows = activeParams.length > 0 
+    ? activeParams.map((p) => {
+        const l = NOM_127_LIMITS[p];
+        const out = isOut(p);
+        return `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:11px;color:#64748b;font-family:DM Sans,sans-serif;">${l.label}</span>
+            <span style="font-size:12px;font-weight:600;font-family:JetBrains Mono,monospace;color:${out ? "#dc2626" : "#1e3a8a"};">
+              ${vals[p]} <span style="font-size:10px;font-weight:400;color:#94a3b8;">${l.unit}</span>
+              ${out ? '<span style="margin-left:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:1px 5px;border-radius:4px;font-size:9px;">!</span>' : ""}
+            </span>
+          </div>`;
+      }).join("") 
+    : `<p style="font-size:11px;color:#94a3b8;padding:8px 0;">Sin datos de telemetría</p>`;
 
   return `
     <div style="min-width:220px;padding:12px 14px;font-family:DM Sans,sans-serif;">
@@ -339,8 +343,13 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
                       <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{node.node_id}</p>
 
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-[11px] font-mono font-semibold" style={{ color }}>
-                          {node.valores ? `pH ${node.valores.ph} · ${node.valores.temperatura}°C` : "Sin datos"}
+                        <span className="text-[11px] font-sans font-semibold tracking-wide" style={{ color }}>
+                          {node.status === "inactivo"
+                            ? "Inactivo"
+                            : !node.valores
+                              ? "Sin datos"
+                              : (node.status === "alerta" ? "Alerta" : "Correcto")
+                          }
                         </span>
                       </div>
                     </div>

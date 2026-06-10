@@ -230,7 +230,7 @@ El interceptor garantiza que **todos** los errores de API sean instancias de `Er
   - `App.jsx` carga las últimas `50` muestras al inicializar (parámetro por defecto).
   - `ExpandedChart.jsx` solicita las últimas `30` muestras para el historial expandido.
   - `MultiNodeExpandedChart.jsx` usa las últimas `10` muestras del historial ya en memoria (sin llamada de red adicional, derivadas de `useMemo`).
-- `fetchTelemetriaRango` está implementado en `api.js` pero **aún no tiene interfaz de usuario** que lo invoque (ver §21).
+- `fetchTelemetriaRango` está implementado en `api.js` y es invocado desde la UI por `ExpandedChart.jsx` y `MultiNodeExpandedChart.jsx` al activar los filtros de rangos de tiempo y hora.
 
 **Estructura de una lectura de telemetría:**
 ```json
@@ -281,7 +281,7 @@ El interceptor garantiza que **todos** los errores de API sean instancias de `Er
 | `registrarMuestra({ nodo_id, valores, nota })` | `POST` | `/muestras` | `{ nodo_id, valores, nota }` | `{ muestra }` |
 | `actualizarNota(muestraId, nota)` | `PUT` | `/muestras/:id/nota` | `{ nota }` | `{ muestra }` |
 
-> **Estado actual:** Las funciones están implementadas en `api.js` pero **no existe interfaz de usuario** que las invoque (ver §21).
+> **Estado actual:** Las funciones están implementadas en `api.js` y están plenamente integradas en la interfaz a través de `MuestraModal.jsx`, el cual se despliega desde las tarjetas `ParameterCard.jsx` en la vista `SingleView` al pasar el cursor sobre la opción "Muestra".
 
 #### Reportes
 
@@ -809,7 +809,6 @@ Generación y gestión de reportes PDF de cumplimiento NOM-127.
 - Error de descarga individual es silencioso (solo `console.error`).
 
 ---
-
 ## 14. Componentes
 
 ### 14.1 `Header.jsx`
@@ -832,13 +831,16 @@ Tarjeta de parámetro individual para `SingleView`.
 - Mini `LineChart` de Recharts con `isAnimationActive={false}` (sin parpadeo en updates).
 - Fondo rojo suave si el valor está fuera de rango.
 - Truco de animación inicial: el primer render tiene `chartData = []`, el segundo render (post-`isMounted`) tiene los datos reales, para disparar la animación de entrada de Recharts **solo la primera vez**.
+- **Acciones contextuales al pasar el cursor (Hover):** Al posicionar el puntero en la esquina superior derecha, se despliega una capa interactiva con botones para guardar una "Muestra" oficial ICUAP y para ver el "Historial" extendido.
 - Clic abre `ExpandedChart`.
 
 ### 14.3 `ExpandedChart.jsx`
 
 Modal de historial ampliado para un parámetro de un nodo individual.
 
-- Carga `GET /telemetria/:nodoId?limit=30` al montar.
+- Carga `GET /telemetria/:nodoId?limit=30` al montar como comportamiento por defecto.
+- **Filtro por Rango con Precisión de Tiempo:** Integra un selector de fecha normal (`<input type="date">`) y un componente custom de hora/minutos deslizable (`ScrollTimePicker`), permitiendo consultar `fetchTelemetriaRango` sobre la hora/minuto exacto seleccionado y recalculando dinámicamente promedio, mínimo, máximo e infracciones.
+- **Acción Aceptar:** Cambiado el botón de confirmación de "Aplicar" a "Aceptar" para una mejor semántica, aplicando el filtro y cerrando el dropdown de fecha y hora.
 - `AreaChart` (área rellena con gradiente) con 280px de altura fija.
 - Estadísticas: promedio, mínimo, máximo, conteo de muestras fuera de norma.
 - `isAnimationActive` usa el default de Recharts (animado en carga inicial). No recibe updates en tiempo real.
@@ -848,7 +850,8 @@ Modal de historial ampliado para un parámetro de un nodo individual.
 
 Modal comparativo de todos los nodos para un parámetro específico.
 
-- **Datos en memoria:** Derivados con `useMemo` del prop `nodes` (las últimas 10 muestras del historial ya cargado). Sin llamadas de red adicionales.
+- **Datos en memoria y consultas paralelas:** Derivados por defecto con `useMemo` del prop `nodes` (las últimas 10 muestras del historial ya cargado). Al aplicar un rango de tiempo, realiza consultas asíncronas concurrentes (`Promise.all`) a `fetchTelemetriaRango` para todos los nodos activos en el periodo exacto.
+- **Selector de Tiempo de Precisión:** Integra selectores de fecha tradicionales y componentes deslizables de hora/minutos `<ScrollTimePicker />`, aplicando el rango y cerrando el dropdown mediante el botón de confirmación "Aceptar".
 - `LineChart` con una línea por nodo. Paleta de colores `NODE_PALETTE` cíclica.
 - Tabla comparativa: lectura actual, promedio, mínimo, máximo, conteo de muestras fuera de norma.
 - **Animación inteligente:** Animado al abrir (1500ms), luego `isAnimationActive={false}` para updates en tiempo real sin parpadeos (`hasAnimated` state + timer).
@@ -869,8 +872,9 @@ Panel lateral deslizante de alertas activas.
 Formulario de registro de nodos (solo admin).
 
 - Validación: MAC regex estricto `^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$`, ubicación 3-200 chars.
-- Sección "Avanzado" colapsable para firmware (opcional). Se auto-expande si hay error de validación en ese campo.
-- MAC normalizada a mayúsculas en el payload.
+- **Opciones avanzadas colapsables:** Incluye entrada para la versión de firmware (opcional) y un panel interactivo de configuración de umbrales de alerta personalizados (pH, temperatura, conductividad, turbidez y TDS) inicializados con los límites oficiales de la NOM-127.
+- **Persistencia Secuencial:** Registra primero el nodo mediante `registrarNodo` y, tras una respuesta exitosa, ejecuta secuencialmente `editarUmbralesDeNodo` en el backend para aplicar los límites personalizados.
+- **Scroll Seguro:** La etiqueta del formulario limita su altura máxima (`max-h-[70vh]`) con scrollbar interno para evitar desbordes visuales.
 - Transición form → `SuccessState` al registrar.
 
 ### 14.7 `NodoConfig.jsx`
@@ -878,6 +882,7 @@ Formulario de registro de nodos (solo admin).
 Panel de edición y eliminación de nodos (solo admin).
 
 - Layout de dos paneles: lista de nodos a la izquierda, formulario de edición a la derecha.
+- **Configuración de firmware y umbrales:** La entrada de la versión de firmware se ha movido al acordeón colapsable de **Opciones avanzadas**, donde también se pueden visualizar y modificar los umbrales específicos de alerta de parámetros (pH, temperatura, conductividad, turbidez, TDS), guardándose secuencialmente con `editarNodo` y `editarUmbralesDeNodo`.
 - Toggle visual de `activo/inactivo` (switch custom).
 - Confirmación de dos pasos para eliminar (`confirmDelete` state).
 - Callback `onNodesChanged(nodoActualizado)` / `onNodesChanged(null, idEliminado)` para sincronizar el estado en `App.jsx`.
@@ -892,7 +897,16 @@ Formulario de creación de usuarios (solo admin).
 - Usa `api.post("/auth/register")` (el default export de axios, no la función nombrada de `api.js`).
 - Validación mínima: campos requeridos (sin validación de formato de email ni strength de contraseña).
 
-### 14.9 `StatusBar.jsx`
+### 14.9 `MuestraModal.jsx`
+
+Formulario modal para el registro de muestras oficiales del ICUAP (BUAP).
+
+- **Estructura unificada:** Diseñado utilizando el kit de diseño compartido (`Modal`, `InputField`, `Alert`, `SuccessState`).
+- **Autocompletado inteligente:** Carga automáticamente los valores actuales del sensor en tiempo real para todos los parámetros medidos y permite su edición manual antes del envío.
+- **Persistencia:** Guarda la muestra oficial llamando a `registrarMuestra` en el servidor y muestra una animación de éxito con `SuccessState` tras confirmar.
+- **Scroll Seguro:** El contenedor limita su altura (`max-h-[75vh]`) y cuenta con scrolling interno mediante `custom-scrollbar`.
+
+### 14.10 `StatusBar.jsx`
 
 Barra compacta de estado del nodo seleccionado en `SingleView`.
 
@@ -901,7 +915,7 @@ Barra compacta de estado del nodo seleccionado en `SingleView`.
 - Color rojo si fuera de rango.
 - Retorna `null` si no hay nodo seleccionado.
 
-### 14.10 `WaterRippleGL.jsx`
+### 14.11 `WaterRippleGL.jsx`
 
 Efecto de agua animado en WebGL puro (sin librerías de gráficos 3D).
 
@@ -928,7 +942,7 @@ useImperativeHandle(ref, () => ({ addRipple }), [addRipple]);
 **Throttle:** Se ignoran ripples con menos de 50ms de separación para no saturar la GPU.
 **Cleanup:** `cancelAnimationFrame`, `ResizeObserver.disconnect()`, `gl.deleteProgram/Buffer`.
 
-### 14.11 `WaterBubblesGL.jsx`
+### 14.12 `WaterBubblesGL.jsx`
 
 Fondo de burbujas animadas usando `@tsparticles/react` (librería).
 
@@ -938,7 +952,7 @@ Fondo de burbujas animadas usando `@tsparticles/react` (librería).
 - Engine inicializado una vez con `initParticlesEngine` en `useEffect([])`.
 - Retorna `null` hasta que el engine esté listo.
 
-### 14.12 Componentes Comunes (`common/`)
+### 14.13 Componentes Comunes (`common/`)
 
 | Componente | Props | Descripción |
 |---|---|---|
@@ -946,6 +960,7 @@ Fondo de burbujas animadas usando `@tsparticles/react` (librería).
 | `Modal` | `isOpen=true, onClose, title, subtitle, children` | Contenedor modal. Cierra con clic externo. Ancho máx. `md` (448px). |
 | `InputField` | `label, icon, error, type, ...props` | Input con label, ícono izquierdo, toggle de contraseña, mensaje de error. |
 | `SuccessState` | `title, subtitle, children` | Estado de éxito con ícono verde y mensaje. |
+| `ScrollTimePicker` | `value, onChange, disabled` | Componente interactivo para horas y minutos. Soporta desplazamiento con la rueda del ratón (scroll/wheel) para incrementar/decrementar, edición de texto manual con validación y clamping automático, e inicialización automática con la hora del sistema. |
 
 ---
 
@@ -1253,9 +1268,7 @@ El frontend ya envía `withCredentials: true` en todas las peticiones.
 
 | Endpoint | Función en api.js | Estado |
 |---|---|---|
-| `GET /telemetria/:id/rango` | `fetchTelemetriaRango` | Implementada en api.js. Sin interfaz de usuario (selector de fechas en ExpandedChart). |
-| `GET /muestras` | `fetchMuestras` | Implementada en api.js. Sin página/sección de muestras de laboratorio. |
-| `POST /muestras` | `registrarMuestra` | Implementada en api.js. Sin formulario de registro de muestras. |
+| `GET /muestras` | `fetchMuestras` | Implementada en api.js. Sin página/sección dedicada independiente (solo registro a través de modal). |
 | `PUT /muestras/:id/nota` | `actualizarNota` | Implementada en api.js. Sin interfaz de anotación. |
 
 ### 21.2 Inconsistencias de Código
@@ -1286,8 +1299,7 @@ El frontend ya envía `withCredentials: true` en todas las peticiones.
 
 ### 21.5 Funcionalidades Deseables Futuras
 
-- **Selector de rango de fechas** en `ExpandedChart` usando `fetchTelemetriaRango`.
-- **Sección de Muestras de Laboratorio** para roles `admin` e `icuap`.
+- **Sección de Muestras de Laboratorio dedicada** para roles `admin` e `icuap` (sección/página completa de muestras).
 - **Notificaciones push del navegador** para alertas fuera del dashboard.
 - **Exportación de datos** en CSV desde la vista de historial.
 - **Modo oscuro** (dark mode) como preferencia de usuario.
