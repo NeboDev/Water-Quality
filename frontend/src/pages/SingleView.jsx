@@ -8,7 +8,8 @@ export default function SingleView({
   loadTelemetry,
   activeParams = [],
   globalAlerts = [],
-  onOpenAlerts
+  onOpenAlerts,
+  onRegisterSample
 }) {
   const nodeAlertsCount = globalAlerts?.filter(a => a.nodo_id === selectedNode?.id).length || 0;
 
@@ -88,6 +89,9 @@ export default function SingleView({
                     currentValue={selectedNode.valores[p]}
                     onExpand={() => setExpandedParam(p)}
                     disabled={selectedNode.status === "inactivo"}
+                    umbrales={selectedNode.umbrales}
+                    nodeId={selectedNode.id}
+                    onRegisterSample={onRegisterSample}
                   />
                 </div>
               );

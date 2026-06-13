@@ -48,6 +48,21 @@ export async function fetchNodos() {
   return data;
 }
 
+export async function fetchUmbrales() {
+  const { data } = await api.get("/umbrales");
+  return data;
+}
+
+export async function fetchUmbralesDeNodo(nodoId) {
+  const { data } = await api.get(`/umbrales/${nodoId}`);
+  return data;
+}
+
+export async function editarUmbralesDeNodo(nodoId, umbrales) {
+  const { data } = await api.put(`/umbrales/${nodoId}`, umbrales);
+  return data;
+}
+
 export async function registrarNodo({ mac, ubicacion, version_fw }) {
   const { data } = await api.post("/nodos", { mac, ubicacion, version_fw });
   return data;

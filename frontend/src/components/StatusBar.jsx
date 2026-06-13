@@ -2,11 +2,20 @@ import { NOM_127_LIMITS, PARAM_COLORS } from "../constants";
 
 const PARAMS = ["ph", "turbidez", "conductividad", "temperatura", "tds"];
 
-function ParamPill({ param, value }) {
-  const limits = NOM_127_LIMITS[param];
+function ParamPill({ param, value, umbrales }) {
+  const limits = (umbrales && umbrales[param])
+    ? {
+        min: umbrales[param].valor_min,
+        max: umbrales[param].valor_max,
+        unit: NOM_127_LIMITS[param].unit,
+        label: NOM_127_LIMITS[param].label
+      }
+    : NOM_127_LIMITS[param];
   const color = PARAM_COLORS[param];
-  const isOut = value < limits.min || value > limits.max;
-  const pct = Math.min(100, Math.max(0, ((value - limits.min) / (limits.max - limits.min)) * 100));
+  const isOut = value !== undefined && value !== null && (value < limits.min || value > limits.max);
+  const pct = value !== undefined && value !== null
+    ? Math.min(100, Math.max(0, ((value - limits.min) / (limits.max - limits.min)) * 100))
+    : 0;
 
   return (
     <div className={`flex-1 min-w-0 px-3 py-2 rounded-xl border transition-colors ${
@@ -17,7 +26,7 @@ function ParamPill({ param, value }) {
           {limits.label}
         </span>
         <span className="font-mono text-sm font-semibold flex-shrink-0" style={{ color: isOut ? "#dc2626" : color }}>
-          {value}
+          {value !== undefined && value !== null ? value : "—"}
           <span className="text-[9px] font-normal text-slate-400 ml-0.5">{limits.unit}</span>
         </span>
       </div>
@@ -35,8 +44,14 @@ export default function StatusBar({ node }) {
   if (!node) return null;
   const alertCount = PARAMS.filter((p) => {
     const v = node.valores[p];
-    const l = NOM_127_LIMITS[p];
-    return v < l.min || v > l.max;
+    if (v === undefined || v === null) return false;
+    const limits = (node.umbrales && node.umbrales[p])
+      ? {
+          min: node.umbrales[p].valor_min,
+          max: node.umbrales[p].valor_max
+        }
+      : NOM_127_LIMITS[p];
+    return v < limits.min || v > limits.max;
   }).length;
 
   return (
@@ -55,7 +70,7 @@ export default function StatusBar({ node }) {
           )}
         </div>
         <div className="flex gap-2 flex-1 min-w-0">
-          {PARAMS.map((p) => <ParamPill key={p} param={p} value={node.valores[p]} />)}
+          {PARAMS.map((p) => <ParamPill key={p} param={p} value={node.valores ? node.valores[p] : null} umbrales={node.umbrales} />)}
         </div>
       </div>
     </div>

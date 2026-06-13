@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
-import { editarNodo, eliminarNodo } from "../api";
+import { editarNodo, eliminarNodo, fetchUmbralesDeNodo, editarUmbralesDeNodo } from "../api";
 
 const STATUS_DOT = {
   activo: "#1a8a55",
   alerta: "#ef4444",
   inactivo: "#94a3b8",
+};
+
+const DEFAULTS = {
+  ph: { valor_min: 6.5, valor_max: 8.5 },
+  turbidez: { valor_min: 0, valor_max: 5 },
+  conductividad: { valor_min: 0, valor_max: 1500 },
+  temperatura: { valor_min: 0, valor_max: 40 },
+  tds: { valor_min: 0, valor_max: 1000 }
 };
 
 export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
@@ -17,6 +25,9 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [deletedNodeName, setDeletedNodeName] = useState("");
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [umbralesForm, setUmbralesForm] = useState(DEFAULTS);
+
   useEffect(() => {
     if (!selected) return;
     setForm({
@@ -27,6 +38,32 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
     setMsg(null);
     setConfirmDelete(false);
     setDeleting(false); // Reset deleting state on selection change
+
+    // Cargar umbrales desde el backend
+    const loadUmbrales = async () => {
+      try {
+        const data = await fetchUmbralesDeNodo(selected.id);
+        const map = {};
+        Object.keys(DEFAULTS).forEach((k) => {
+          map[k] = {
+            valor_min: data.umbrales?.[k]?.valor_min ?? DEFAULTS[k].valor_min,
+            valor_max: data.umbrales?.[k]?.valor_max ?? DEFAULTS[k].valor_max,
+          };
+        });
+        setUmbralesForm(map);
+      } catch (err) {
+        // Fallback a umbrales locales o constantes por defecto
+        const map = {};
+        Object.keys(DEFAULTS).forEach((k) => {
+          map[k] = {
+            valor_min: selected.umbrales?.[k]?.valor_min ?? DEFAULTS[k].valor_min,
+            valor_max: selected.umbrales?.[k]?.valor_max ?? DEFAULTS[k].valor_max,
+          };
+        });
+        setUmbralesForm(map);
+      }
+    };
+    loadUmbrales();
   }, [selected?.id]);
 
   const set = (field) => (e) =>
@@ -42,8 +79,15 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
         version_fw: form.version_fw.trim() || undefined,
         activo: form.activo,
       });
-      setMsg({ type: "ok", text: "Nodo actualizado correctamente." });
-      onNodesChanged?.(res.nodo);
+      
+      // Guardar umbrales individuales
+      await editarUmbralesDeNodo(selected.id, umbralesForm);
+
+      setMsg({ type: "ok", text: "Nodo y umbrales actualizados correctamente." });
+      onNodesChanged?.({
+        ...res.nodo,
+        umbrales: umbralesForm
+      });
     } catch (e) {
       setMsg({ type: "err", text: e.message });
     } finally {
@@ -163,22 +207,6 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
                   />
                 </div>
 
-                {/* Versión FW */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="label-sm" htmlFor="cfg-fw">
-                    Versión firmware
-                    <span className="ml-1.5 text-[10px] font-normal text-slate-400">(opcional)</span>
-                  </label>
-                  <input
-                    id="cfg-fw"
-                    type="text"
-                    value={form.version_fw}
-                    onChange={set("version_fw")}
-                    className="input-base font-mono"
-                    placeholder="1.0.0"
-                  />
-                </div>
-
                 {/* switch */}
                 <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl">
                   <div>
@@ -197,6 +225,111 @@ export default function NodoConfig({ nodes, onClose, onNodesChanged }) {
                       className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${form.activo ? "translate-x-5" : "translate-x-0"}`}
                     />
                   </button>
+                </div>
+
+                {/* Opciones avanzadas (Umbrales personalizados) */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100/80 transition-colors text-left"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">Opciones avanzadas</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Configurar firmware y umbrales de alerta</p>
+                    </div>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`text-slate-400 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {showAdvanced && (
+                    <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-4 animate-fade-in">
+                      {/* Versión firmware */}
+                      <div className="flex flex-col gap-1.5 pb-3 border-b border-slate-100">
+                        <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide" htmlFor="cfg-fw">
+                          Versión firmware
+                          <span className="ml-1.5 text-[10px] font-normal text-slate-400 font-sans lowercase">(opcional)</span>
+                        </label>
+                        <input
+                          id="cfg-fw"
+                          type="text"
+                          value={form.version_fw}
+                          onChange={set("version_fw")}
+                          className="input-base font-mono h-8.5 py-1.5 text-xs bg-slate-50/50"
+                          placeholder="1.0.0"
+                        />
+                      </div>
+
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1">
+                          Configurar Umbrales de Alerta
+                        </p>
+                        <p className="text-[10px] text-slate-500 leading-relaxed">
+                          Modifica los valores límites de alerta específicos para este nodo. Si el valor de un parámetro sale de este rango, se detonará una alerta inmediata.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        {Object.entries(umbralesForm).map(([param, limites]) => {
+                          const labels = {
+                            ph: { label: "pH", unit: "" },
+                            temperatura: { label: "Temperatura", unit: "°C" },
+                            conductividad: { label: "Conductividad", unit: "µS/cm" },
+                            turbidez: { label: "Turbidez", unit: "NTU" },
+                            tds: { label: "TDS", unit: "mg/L" }
+                          };
+                          const pInfo = labels[param] || { label: param, unit: "" };
+                          return (
+                            <div key={param} className="flex items-center justify-between gap-4 py-1.5 border-b border-slate-50 last:border-0">
+                              <div className="min-w-[120px]">
+                                <p className="text-xs font-semibold text-slate-700">{pInfo.label}</p>
+                                {pInfo.unit && <p className="text-[9px] text-slate-400 font-mono">{pInfo.unit}</p>}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase">Mín:</span>
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    value={limites.valor_min}
+                                    onChange={(e) => setUmbralesForm(prev => ({
+                                      ...prev,
+                                      [param]: { ...prev[param], valor_min: parseFloat(e.target.value) || 0 }
+                                    }))}
+                                    className="w-20 input-base text-xs text-center py-1 px-1.5 h-8 font-mono"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase">Máx:</span>
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    value={limites.valor_max}
+                                    onChange={(e) => setUmbralesForm(prev => ({
+                                      ...prev,
+                                      [param]: { ...prev[param], valor_max: parseFloat(e.target.value) || 0 }
+                                    }))}
+                                    className="w-20 input-base text-xs text-center py-1 px-1.5 h-8 font-mono"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Mensaje de feedback */}

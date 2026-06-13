@@ -3,7 +3,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer, Legend,
 } from "recharts";
-import { PARAMS, NOM_127_LIMITS, PARAM_COLORS } from "../constants";
+import { PARAMS, NOM_127_LIMITS, PARAM_COLORS, buildHistory } from "../constants";
+import { fetchTelemetriaRango } from "../api";
 
 // node colors... we can add more in case of more nodes
 const NODE_PALETTE = [
@@ -23,19 +24,23 @@ const NODE_PALETTE = [
 const OVERVIEW_POINTS = 10;
 
 // Merge all nodes' history for a given param into a unified timeline.
-// Agrupamos usando la cadena exacta de tiempo (HH:MM:SS) generada por el frontend.
-function buildMultiNodeData(nodes, param) {
+// Agrupamos usando la cadena exacta de tiempo generada por el frontend.
+function buildMultiNodeData(nodes, param, isRangeActive) {
   const timeMap = {};
 
   // 1. Recopilar todos los puntos de tiempo únicos de todos los nodos
   nodes.forEach((node, idx) => {
     if (!node.history?.[param]) return;
     node.history[param].forEach((point) => {
-      // Usamos el string del tiempo como llave 
-      // Esto evita colisiones matemáticas y respeta el ritmo real de los datos.
-      const bucketKey = point.time;
+      // Si el rango está activo, usamos fullLabel para agrupar (evita colisiones multi-día).
+      // Si no, usamos la hora (point.time) tradicional.
+      const bucketKey = isRangeActive ? point.fullLabel : point.time;
       if (!timeMap[bucketKey]) {
-        timeMap[bucketKey] = { _ts: point.timestamp, time: point.time };
+        timeMap[bucketKey] = {
+          _ts: point.timestamp,
+          time: isRangeActive ? `${point.date} ${point.time.substring(0, 5)}` : point.time,
+          fullLabelKey: point.fullLabel
+        };
       }
     });
   });
@@ -50,14 +55,16 @@ function buildMultiNodeData(nodes, param) {
     // Mapear los valores reales que sí existen para este nodo por su tiempo
     const nodeValsByTime = {};
     node.history[param].forEach((point) => {
-      nodeValsByTime[point.time] = point.value;
+      const key = isRangeActive ? point.fullLabel : point.time;
+      nodeValsByTime[key] = point.value;
     });
 
     // Iniciar con la primera muestra disponible del nodo para evitar huecos iniciales
     let lastKnownVal = node.history[param].length > 0 ? node.history[param][0].value : undefined;
 
     sortedBuckets.forEach((bucket) => {
-      const currentVal = nodeValsByTime[bucket.time];
+      const lookupKey = isRangeActive ? bucket.fullLabelKey : bucket.time;
+      const currentVal = nodeValsByTime[lookupKey];
       if (currentVal !== undefined) {
         lastKnownVal = currentVal;
       }
@@ -69,8 +76,8 @@ function buildMultiNodeData(nodes, param) {
     });
   });
 
-  // Retornar los últimos OVERVIEW_POINTS buckets ordenados
-  return sortedBuckets.slice(-OVERVIEW_POINTS);
+  // Retornar los últimos OVERVIEW_POINTS buckets ordenados, o todos si hay rango activo
+  return isRangeActive ? sortedBuckets : sortedBuckets.slice(-OVERVIEW_POINTS);
 }
 
 const CustomTooltip = ({ active, payload, label, nodes, unit }) => {
@@ -107,7 +114,7 @@ function MultiNodeParamCard({ param, nodes, globalAlerts, onResolveAlert, canRes
   const paramColor = PARAM_COLORS[param];
 
   const activeNodes = nodes.filter((n) => n.history?.[param]);
-  const data = buildMultiNodeData(activeNodes, param);
+  const data = buildMultiNodeData(activeNodes, param, false);
   const chartData = isMounted ? data : [];
 
   // Check if any node has an out-of-range value for this param
