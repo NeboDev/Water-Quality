@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Routes, Route, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import Landing from "./pages/Landing";
 import Header from "./components/Header";
-import ParameterCard from "./components/ParameterCard";
 import NodeMap from "./pages/NodeMap";
 import StatusBar from "./components/StatusBar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ExpandedChart from "./components/ExpandedChart";
 import MultiNodeExpandedChart from "./components/MultiNodeExpandedChart";
 import NodoForm from "./components/NodoForm";
 import UsuarioForm from "./components/UsuarioForm";
@@ -14,9 +14,10 @@ import MuestraModal from "./components/MuestraModal";
 import GlobalAlertsDrawer from "./components/GlobalAlertsDrawer";
 import Overview from "./pages/Overview";
 import Reportes from "./pages/Reportes";
-import SingleView from "./pages/SingleView";
+import NodosView from "./pages/NodosView";
+import NodeDetailModal from "./components/NodeDetailModal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { buildNode, buildHistory, telemetryToPoint, PARAMS, NOM_127_LIMITS } from "./constants";
+import { buildNode, buildHistory, telemetryToPoint, PARAMS } from "./constants";
 import { fetchNodos, fetchUmbrales, fetchTelemetria, fetchAlertas, resolverAlerta, logout as apiLogout } from "./api";
 import { io } from "socket.io-client";
 import { usePermissions } from "./hooks/usePermissions";
@@ -30,7 +31,7 @@ function LoadingScreen({ message = "Cargando…" }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-11 h-11 rounded-full border-2 border-buap-200 border-t-buap-700 animate-spin-slow" />
+        <div className="w-11 h-11 rounded-full border-2 border-kanan-200 border-t-kanan-700 animate-spin-slow" />
         <p className="text-sm text-slate-500 font-medium">{message}</p>
       </div>
     </div>
@@ -65,21 +66,26 @@ export default function App() {
       return s;
     } catch { return null; }
   });
-  const [screen, setScreen] = useState("login");
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Nodes state
   const [nodes, setNodes] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [view, setView] = useState("overview");
 
+  // Conexion de socket en tiempo real (indicador en el Header)
+  const [socketConnected, setSocketConnected] = useState(false);
+
+  // Modal de detalle de nodo (vista Nodos) — sincronizado con ?nodo=<id>
+  const [modalNodeId, setModalNodeId] = useState(null);
+
   // Loading states
   const [loadingNodes, setLoadingNodes] = useState(false);
-  const [loadingTelemetry, setLoadingTelemetry] = useState(false);
   const [initializingTelemetry, setInitializingTelemetry] = useState(false);
   const [nodesError, setNodesError] = useState("");
 
   // Expanded chart modal
-  const [expandedParam, setExpandedParam] = useState(null); // param key or null
   const [expandedOverviewParam, setExpandedOverviewParam] = useState(null);
   const [showNodoForm, setShowNodoForm] = useState(false);
   const [showUsuarioForm, setShowUsuarioForm] = useState(false);
@@ -115,6 +121,7 @@ export default function App() {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
     setView("overview"); // siempre aterrizar en Vista General al iniciar sesión
     setAuth(s);
+    navigate("/dashboard");
   };
 
   const handleLogout = async () => {
@@ -128,7 +135,7 @@ export default function App() {
     setSelectedNode(null);
     setGlobalAlerts([]);
     setView("overview"); // resetear para la próxima sesión
-    setScreen("login");
+    navigate("/");
   };
 
   // cargar todos los nodos
@@ -179,13 +186,8 @@ export default function App() {
 
   // Load telemetry for one node (updates selectedNode too)
   const loadTelemetry = useCallback(async (node) => {
-    setLoadingTelemetry(true);
-    try {
-      const updated = await loadTelemetrySilent(node);
-      setSelectedNode(updated);
-    } finally {
-      setLoadingTelemetry(false);
-    }
+    const updated = await loadTelemetrySilent(node);
+    setSelectedNode(updated);
   }, [loadTelemetrySilent]);
 
   //  WebSockets: listen for realtime telemetry 
@@ -193,6 +195,14 @@ export default function App() {
     if (!auth?.user) return;
 
     socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3000");
+
+    // Estado real de la conexión — refleja el indicador del Header
+    setSocketConnected(socket.connected);
+    socket.on("connect", () => setSocketConnected(true));
+    socket.on("disconnect", () => setSocketConnected(false));
+    // reconnect_attempt/reconnect son eventos del Manager (socket.io-client v4), no del socket
+    socket.io.on("reconnect_attempt", () => setSocketConnected(false));
+    socket.io.on("reconnect", () => setSocketConnected(true));
 
     socket.on("telemetria:live", (latest) => {
       const newPoint = (param) => telemetryToPoint(latest, param);
@@ -248,6 +258,11 @@ export default function App() {
         ubicacion: payload.alerta.ubicacion || nodoLocal?.ubicacion || nodoLocal?.node_id || payload.mac,
       };
       setGlobalAlerts((prev) => [alertaEnriquecida, ...prev]);
+    });
+
+    // Una alerta resuelta en cualquier sesión debe reflejarse aquí sin refrescar
+    socket.on("alertas:resuelta", (payload) => {
+      setGlobalAlerts((prev) => prev.filter((a) => a.id !== payload.alerta.id));
     });
 
     return () => {
@@ -358,43 +373,52 @@ export default function App() {
     setShowTimeoutWarning(false);
   };
 
-  // Redirección automática si hay un solo nodo registrado
+  // Auto-selección del único nodo registrado (para que "Métricas por nodo" no requiera elegirlo a mano)
   useEffect(() => {
     if (nodes.length === 1) {
-      if (view === "overview") {
-        setView("dashboard");
-      }
       if (nodes[0] && (!selectedNode || selectedNode.id !== nodes[0].id)) {
         setSelectedNode(nodes[0]);
       }
     }
-  }, [nodes, view, selectedNode?.id]);
+  }, [nodes, selectedNode?.id]);
 
   // permisos basados en roles
   const permissions = usePermissions(auth?.user?.rol);
-
-  // pantallas sin auth
-  if (!auth && screen === "register") {
-    return (
-      <Register
-        onRegister={() => {
-          setScreen("login");
-        }}
-        onGoLogin={() => setScreen("login")}
-      />
-    );
-  }
-  if (!auth) return <Login onLogin={handleLogin} onGoRegister={() => setScreen("register")} />;
-  if (loadingNodes) return <LoadingScreen message="Cargando nodos…" />;
-  if (nodesError) return <ErrorScreen message={nodesError} onRetry={() => loadNodes()} />;
-  if (initializingTelemetry) return <LoadingScreen message="Sincronizando telemetría…" />;
 
   const handleSelectNode = (node) => {
     if (node.id === selectedNode?.id) return;
     prevSelectedId.current = null; // allow reload
     setSelectedNode(node);
-    setView("dashboard");
+    setView("nodos");
   };
+
+  // ── Modal de detalle de nodo (vista Nodos) ──
+  const openNodeModal = useCallback((node) => {
+    setModalNodeId(node.id);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("nodo", node.id);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const closeNodeModal = useCallback(() => {
+    setModalNodeId(null);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("nodo");
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // Deep link: si la URL trae ?nodo=<id> y ese nodo ya cargó, abre el modal solo
+  useEffect(() => {
+    const paramId = searchParams.get("nodo");
+    if (paramId && nodes.some((n) => n.id === paramId) && modalNodeId !== paramId) {
+      setModalNodeId(paramId);
+      setView("nodos");
+    }
+  }, [searchParams, nodes, modalNodeId]);
 
   // ── Enriquecer nodos con status dinámico ──
   const enrichedNodes = nodes.map(node => {
@@ -418,9 +442,14 @@ export default function App() {
   });
 
   const enrichedSelectedNode = selectedNode ? enrichedNodes.find(n => n.id === selectedNode.id) || selectedNode : null;
-  const nodeReady = enrichedSelectedNode?.valores && enrichedSelectedNode?.history;
+  const modalNode = modalNodeId ? enrichedNodes.find(n => n.id === modalNodeId) || null : null;
 
-  return (
+  function renderDashboardScreen() {
+    if (loadingNodes) return <LoadingScreen message="Cargando nodos…" />;
+    if (nodesError) return <ErrorScreen message={nodesError} onRetry={() => loadNodes()} />;
+    if (initializingTelemetry) return <LoadingScreen message="Sincronizando telemetría…" />;
+
+    return (
     <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
       <Header
         nodes={enrichedNodes}
@@ -439,20 +468,16 @@ export default function App() {
         canViewReports={permissions.canViewReports}
         globalAlerts={globalAlerts}
         onOpenAlerts={handleOpenAlerts}
+        socketConnected={socketConnected}
       />
 
       <main className="flex-1 flex gap-5 p-5 overflow-hidden animate-fade-in">
-        {view === "dashboard" && (
-          <SingleView
-            loadingTelemetry={loadingTelemetry}
-            nodeReady={nodeReady}
-            selectedNode={enrichedSelectedNode}
-            setExpandedParam={setExpandedParam}
-            loadTelemetry={loadTelemetry}
-            activeParams={activeParams}
-            globalAlerts={globalAlerts}
-            onOpenAlerts={handleOpenAlerts}
-            onRegisterSample={() => setShowMuestraModal(enrichedSelectedNode)}
+        {view === "nodos" && (
+          <NodosView
+            nodes={enrichedNodes}
+            onOpenNode={openNodeModal}
+            canAddNode={permissions.canManageNodes}
+            onAddNode={() => setShowNodoForm(true)}
           />
         )}
 
@@ -466,7 +491,7 @@ export default function App() {
                 prevSelectedId.current = null;
                 setSelectedNode(node);
               }
-              setView("dashboard");
+              setView("nodos");
             }}
             onResolveAlert={async (id) => {
               try {
@@ -502,16 +527,14 @@ export default function App() {
       </main>
 
 
-      {/* Expanded chart modal */}
-      {expandedParam && enrichedSelectedNode && (
-        <ExpandedChart
-          param={expandedParam}
-          nodeId={enrichedSelectedNode.id}
-          nodeName={enrichedSelectedNode.node_id}
-          latestTimestamp={enrichedSelectedNode.timestamp}
-          onClose={() => setExpandedParam(null)}
-          disabled={enrichedSelectedNode.status === "inactivo"}
-          umbrales={enrichedSelectedNode.umbrales}
+      {/* Detalle de nodo (vista Nodos) */}
+      {modalNode && (
+        <NodeDetailModal
+          key={modalNode.id}
+          node={modalNode}
+          onClose={closeNodeModal}
+          canRecordSamples={permissions.canRecordSamples}
+          onRegisterSample={(node) => setShowMuestraModal(node)}
         />
       )}
 
@@ -671,7 +694,7 @@ export default function App() {
               </button>
               <button
                 onClick={handleExtendSession}
-                className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-buap-700 text-white text-xs font-semibold hover:bg-buap-800 transition-all shadow-md shadow-buap-700/20 select-none active:scale-[0.98]"
+                className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-kanan-700 text-white text-xs font-semibold hover:bg-kanan-800 transition-all shadow-md shadow-kanan-700/20 select-none active:scale-[0.98]"
               >
                 Continuar
               </button>
@@ -681,5 +704,28 @@ export default function App() {
         </div>
       )}
     </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route
+        path="/login"
+        element={auth ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} onGoRegister={() => navigate("/register")} />}
+      />
+      <Route
+        path="/register"
+        element={
+          auth ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Register onRegister={() => navigate("/login")} onGoLogin={() => navigate("/login")} />
+          )
+        }
+      />
+      <Route path="/dashboard" element={auth ? renderDashboardScreen() : <Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

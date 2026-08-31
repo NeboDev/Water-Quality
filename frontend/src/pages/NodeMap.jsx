@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { NOM_127_LIMITS, PARAMS } from "../constants";
+import CardCorners from "../components/common/CardCorners";
 
 //cu coords
 const CU_CENTER = [19.001116496808024, -98.20175497632175];
@@ -9,9 +10,9 @@ const STORAGE_KEY = "aquamonitor_node_positions";
 
 // node color status
 const STATUS_COLOR = {
-  activo: "#1a8a55",
-  alerta: "#ef4444",
-  inactivo: "#94a3b8",
+  activo: "#4f7f5b",
+  alerta: "#b03a2b",
+  inactivo: "#9a9a9c",
 };
 
 // default node positions
@@ -95,9 +96,9 @@ function buildPopupHTML(node, color) {
         return `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f1f5f9;">
             <span style="font-size:11px;color:#64748b;font-family:DM Sans,sans-serif;">${l.label}</span>
-            <span style="font-size:12px;font-weight:600;font-family:JetBrains Mono,monospace;color:${out ? "#dc2626" : "#1e3a8a"};">
+            <span style="font-size:12px;font-weight:600;font-family:JetBrains Mono,monospace;color:${out ? "#b03a2b" : "#1e3a8a"};">
               ${vals[p]} <span style="font-size:10px;font-weight:400;color:#94a3b8;">${l.unit}</span>
-              ${out ? '<span style="margin-left:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:1px 5px;border-radius:4px;font-size:9px;">!</span>' : ""}
+              ${out ? '<span style="margin-left:4px;background:#fdf1ee;color:#b03a2b;border:1px solid #b03a2b66;padding:1px 5px;font-size:9px;">!</span>' : ""}
             </span>
           </div>`;
       }).join("") 
@@ -292,17 +293,18 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
             ? "translate-x-0 opacity-100"
             : "-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100"
           }
-          fixed inset-y-4 left-4 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/80 z-[1020] p-4
-          lg:static lg:w-72 lg:bg-transparent lg:shadow-none lg:border-none lg:p-0 lg:h-full lg:z-auto
+          fixed inset-y-4 left-4 w-72 bg-white border border-slate-300 z-[1020] p-4
+          lg:static lg:w-72 lg:bg-transparent lg:border-none lg:p-0 lg:h-full lg:z-auto
         `}
       >
-        <div className="bg-white lg:bg-slate-50 py-2 z-10 border-b border-slate-200 mb-1 flex items-center justify-between flex-shrink-0">
-          <h2 className="text-sm font-bold text-buap-900">
+        <div className="lg:hidden"><CardCorners /></div>
+        <div className="bg-white lg:bg-slate-50 py-2 z-10 border-b border-slate-300 mb-1 flex items-center justify-between flex-shrink-0">
+          <h2 className="text-sm font-bold text-kanan-900">
             Nodos registrados ({nodes.length})
           </h2>
           <button
             onClick={() => setShowSidebar(false)}
-            className="lg:hidden p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+            className="lg:hidden p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
             title="Cerrar lista"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -330,14 +332,14 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
                     onSelectNode(node);
                     setShowSidebar(false); // close sidebar on select on mobile
                   }}
-                  className={`card-hover p-4 cursor-pointer transition-all ${isSel ? "ring-2 ring-offset-2" : ""
+                  className={`card-hover p-4 cursor-pointer transition-colors ${isSel ? "outline outline-2 outline-offset-2" : ""
                     }`}
-                  style={isSel ? { "--tw-ring-color": color, borderColor: color + "50" } : {}}
+                  style={isSel ? { outlineColor: color, borderColor: color } : {}}
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: color }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-buap-900 truncate" title={node.ubicacion}>
+                      <p className="text-sm font-bold text-kanan-900 truncate" title={node.ubicacion}>
                         {node.ubicacion}
                       </p>
                       <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{node.node_id}</p>
@@ -361,12 +363,12 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
 
           {/* Admin controls */}
           {isAdmin && nodes.length > 0 && (
-            <div className="mt-2 pt-4 border-t border-slate-200 flex flex-col gap-2">
+            <div className="mt-2 pt-4 border-t border-slate-300 flex flex-col gap-2">
               <button
                 onClick={() => { setDragMode((v) => !v); setUnsaved(false); }}
-                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${dragMode
-                  ? "bg-amber-50 border-amber-300 text-amber-700"
-                  : "bg-white border-slate-200 text-slate-600 hover:border-buap-300 hover:text-buap-700 shadow-sm"
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wider border transition-colors ${dragMode
+                  ? "bg-status-warn/10 border-status-warn text-status-warn"
+                  : "bg-white border-slate-300 text-slate-600 hover:border-kanan-400 hover:text-kanan-700"
                   }`}
               >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -379,7 +381,7 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
               {unsaved && (
                 <button
                   onClick={handleResetPositions}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-all shadow-sm"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wider bg-status-alert/10 border border-status-alert/40 text-status-alert hover:bg-status-alert/20 transition-colors"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6a4 4 0 014-4 4 4 0 013.46 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -398,14 +400,15 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
       <div className="flex flex-col flex-1 min-w-0">
 
         {/* map*/}
-        <div className="card overflow-hidden flex-1 border border-slate-200/60 shadow-inner min-h-[400px] relative">
+        <div className="card overflow-hidden flex-1 min-h-[400px]">
+          <CardCorners />
           <div ref={mapRef} className="w-full h-full" />
 
           {/* Floating Toggle Button (visible only on small screens) */}
           {nodes.length > 0 && (
             <button
               onClick={() => setShowSidebar(true)}
-              className="lg:hidden absolute top-3 right-3 z-[999] flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-xl shadow-lg hover:bg-slate-50 active:scale-[0.98] transition-all text-xs font-semibold text-slate-700 select-none"
+              className="lg:hidden absolute top-3 right-3 z-[999] flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-sm border border-slate-300 hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-700 select-none"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M1.5 3h11M1.5 7h11M1.5 11h11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -416,7 +419,8 @@ export default function NodeMap({ nodes, selectedNode, onSelectNode, isAdmin }) 
 
           {nodes.length === 0 && (
             <div className="absolute inset-0 z-[1000] bg-white/70 backdrop-blur-[2px] flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3 text-slate-500 bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+              <div className="relative flex flex-col items-center gap-3 text-slate-500 bg-white p-6 border border-slate-300">
+                <CardCorners />
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1-8h-2V7h2v2z" fill="currentColor" />
                 </svg>

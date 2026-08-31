@@ -21,7 +21,7 @@ export default function InputField({ label, icon, error, type = "text", ...props
         <input
           type={inputType}
           className={`input-base ${icon ? "pl-10" : ""} ${
-            error ? "border-red-300 bg-red-50 focus:ring-red-100 focus:border-red-500" : ""
+            error ? "border-status-alert bg-status-alert/5 focus:ring-status-alert/30 focus:border-status-alert" : ""
           } ${isPassword ? "pr-11" : ""}`}
           {...props}
         />
@@ -29,7 +29,7 @@ export default function InputField({ label, icon, error, type = "text", ...props
           <button
             type="button"
             onClick={() => setShowPass((v) => !v)}
-            className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded"
+            className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
             tabIndex={-1}
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -42,7 +42,7 @@ export default function InputField({ label, icon, error, type = "text", ...props
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-status-alert">{error}</p>}
     </div>
   );
 }

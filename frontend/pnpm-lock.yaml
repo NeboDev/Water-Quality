@@ -14,9 +14,12 @@ importers:
       '@tsparticles/slim':
         specifier: ^4.0.2
         version: 4.0.5
+      '@uiw/react-heat-map':
+        specifier: ^2.3.4
+        version: 2.3.4(@babel/runtime@7.29.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       axios:
         specifier: ^1.16.0
-        version: 1.16.1
+        version: 1.16.1(debug@4.4.3)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -29,6 +32,9 @@ importers:
       react-leaflet:
         specifier: ^4.2.1
         version: 4.2.1(leaflet@1.9.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.6
+        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       recharts:
         specifier: ^2.13.3
         version: 2.15.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -336,6 +342,10 @@ packages:
       react: ^18.0.0
       react-dom: ^18.0.0
 
+  '@remix-run/router@1.23.4':
+    resolution: {integrity: sha512-q7j5geK7xs3UJSdm9/iytUNclBnLmYx1EnSeCFXHPeutdqgIMeFeHtUZgS3EhlKxdBEAu8OwtJCwmLrEzpSs7Q==}
+    engines: {node: '>=14.0.0'}
+
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
 
@@ -482,112 +492,132 @@ packages:
 
   '@tsparticles/basic@4.0.5':
     resolution: {integrity: sha512-JWAsRUh8v8RYxLilAAlcwIvUlO2Jfl0DW2t+aAm0OAp4WjmebWSYeG+/CV6Ov+ynV/38vEDAYQIRpyG8Vpmyrg==}
+    deprecated: Please update to version 4.1.1
 
   '@tsparticles/canvas-utils@4.0.5':
     resolution: {integrity: sha512-U/KtQBuv1reSTnpyBswp4SfhDjOSG9lvcR8Z+1FTV+5/Vfjz2hEy3p61dN934xffrY24uFJE1f60m1npwZ4Ayg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/engine@4.0.5':
     resolution: {integrity: sha512-ovFQNzz18Ef0ww7wPqykHWU06K1EhTkMPZhoIZQQaRbFmKKoE+5LyTGGTZGzGjQ4GjHLZq7l9kGl1oInpzoK4Q==}
+    deprecated: Please update to version 4.1.1
 
   '@tsparticles/interaction-external-attract@4.0.5':
     resolution: {integrity: sha512-k/2/TGRhCEJHUTWjcarWzG2c4OdHKihkjrEaKaLNuLOtJr30IPAzD4WSs8TDUEFAh1lEKmpC3stbRcjMmHMnMQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-bounce@4.0.5':
     resolution: {integrity: sha512-p6KWrxFmhWXvae3HA3SpE5q8X7eVvPKpxbqjk+pK648zb20u8iCpD+7ahadkey10TxggC7ffAa20ATLGftchdw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-bubble@4.0.5':
     resolution: {integrity: sha512-rFBCF0oOD2bFDM/VmN1M/8LC114UXOvJSyAHmxB1z3N9u/S1MfQBz3nh98D6hTsYAyc9pKdaInDWqBQxabEmUw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-connect@4.0.5':
     resolution: {integrity: sha512-e9xmZGLI8C7yf+G9Bpbh30QxwXDJkbV16d012jrjVklRnT2iQvs6y2p1KGI3xTNWkyKAKnyIiXYRRSSvBgc4+Q==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-destroy@4.0.5':
     resolution: {integrity: sha512-AX9o1nytQVQdCvhSzF2fzJwVyG0dtSmWIgC1HBklCoARmyydyWOJ2rt0/4sPCu0RjEYeUDI6LSTzzCy6LSJaTw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-grab@4.0.5':
     resolution: {integrity: sha512-xa+zfluNw+nhoNxBbqeM62QYvfb0NV+gt91R/1bYHJb8CmflBiYhLX5kO3dsGu/zzpjnccqnEN5UDnvPKO8niQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-parallax@4.0.5':
     resolution: {integrity: sha512-arNHolnrksrbeLjDZbVDStwgNZAudkRoC3BnR+a2bzVEyGQnix/3MVT+N1PnrSnd0KuXN+yec+N3MlU91aJ2FQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-pause@4.0.5':
     resolution: {integrity: sha512-ehMtDvISL40Sr8cQ6vqv67LjwV9xj92OI7RkigTViJiwC4+GNv+3mdEb9Nn/dBphuQ2LmjZAc9b7FfPmBoKIdQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-push@4.0.5':
     resolution: {integrity: sha512-XmDUE7HoAIJf9MFC+7WBuEvTk9RfXyLSLFWxRmyEapy4AMDUyWR8DhZU+yslj440W1J0rq28vPOjsOYUwvY9tQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-remove@4.0.5':
     resolution: {integrity: sha512-Vd3KWTPwmguAJR1xmwrYwv7ItFL7xqxDzTS0YfDwtm7glXQG/Uo8lszxcASQTw6DNvSG6opGisGlO+dGSX0uJw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-repulse@4.0.5':
     resolution: {integrity: sha512-Fpd8PBJDRcBohuJbwpr99annMWVVuct5EPiTRsyigshrERpFr4xDHPodhgVJ6A9IFs0NGMH5Kfa1WReSsM8tCA==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-external-slow@4.0.5':
     resolution: {integrity: sha512-u1RFBXmsOWVPnmdgOsgI3Usg8By0u+xARS1faU+DeQx0UCZeVTbRKR9/f+afcP36EVGb9y5Ij4+zjq5M84dmbA==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-particles-attract@4.0.5':
     resolution: {integrity: sha512-1FWdRXB32s1LUrV7u0D+mu88WxRq8ijmUfqTlEHMPX/nNPKoSRbic4pN1fTxdbH9hD21S+rjECBmaLmEzpqnVg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-particles-collisions@4.0.5':
     resolution: {integrity: sha512-kF5f/7xnjj3tPFUFxuPe2TX8Ee0ZNJskvU0gXjNb6UER9WuvK596gkJWxeWib8VMyKgAywyV0Mp/hXQh0YsJRw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/interaction-particles-links@4.0.5':
     resolution: {integrity: sha512-06+CKi4DwbmBwoIuHc/PTpnI7V7loqFgmddY16xPXzDs5i9W/Uhhovg5d5yplFOTxmiNLF9QY0Yz6aMHZ3f7cQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
       '@tsparticles/plugin-interactivity': 4.0.5
 
   '@tsparticles/plugin-blend@4.0.5':
     resolution: {integrity: sha512-7w21hS28GnD4ac5uooRskmMprFUCJs6wHveC4CY5XiiE7ldcHTUMNT9b2fwXMFawBZDSezfjhCms7zhIQDbjgg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/plugin-easing-quad@4.0.5':
     resolution: {integrity: sha512-CsRCndjCeRAUAz+l7zrYEWdw8JK7gbNBxnq5sRcaflESDLNtyeZQtkYoVsMouUgbr4/UdShLMi1IqQiR117vpw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
@@ -598,26 +628,31 @@ packages:
 
   '@tsparticles/plugin-hsl-color@4.0.5':
     resolution: {integrity: sha512-gdey7PUKPijnG9hIfrD3z8N4xjyOyRWXsvaGXhoMgpaD47Vcc/wsIXmx/0Znsct0cEEXByXoMQyM8MRO1yTg0w==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/plugin-interactivity@4.0.5':
     resolution: {integrity: sha512-tRTvH5/MUy/3MNG344rBNuTFxLVCo9MaiYU3d0cxg9Xuh1jVOsIcNj3KbQrOdYvFowzVml8+cAeMGfLtsQoyDw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/plugin-move@4.0.5':
     resolution: {integrity: sha512-IJVS/f7QHEfGz4LSlidAmLPPGc2Jj1vp6ydxvMOIyjzPrxS8PIYqsXB0jWjy2fr5KT6+VCNDX+7fY8v0EK9OOg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/plugin-rgb-color@4.0.5':
     resolution: {integrity: sha512-+JDxQWW1WupxnDwvN+C0vWQmOvBFkvtvK2MJ6qNjOI9/7Nj8s0xzwm5KGqVUWkaF16K3+AihNjEQRb/M8E5skg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/react@4.0.5':
     resolution: {integrity: sha512-3XJmucy/gOgPzQ+i5ZAt3LD8840xdxLPfbNMuRk8D/fHhxI07SHx/8GhODcqnHHHme1zEf0/zUdFee73PuH+NA==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': workspace:^
       react: '>=16.8.0'
@@ -625,69 +660,83 @@ packages:
 
   '@tsparticles/shape-circle@4.0.5':
     resolution: {integrity: sha512-y2CcWNCnC2m2/DaE5CsWbJSCjKsLbOySdT9qgyezmT/boYHupJuNNNOeXP56Tlq+je1wZpayCIAKOpl+VhBtiw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/shape-emoji@4.0.5':
     resolution: {integrity: sha512-OyEtJ+tspbIQz21S2aUReH1yllIsZ8eAQ+OthcXllviS43hUSjlNdhsYhlJquIX4pU4UixpMaNngM2CaUDb4RQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/shape-image@4.0.5':
     resolution: {integrity: sha512-2tmJly5jLDJo8MtWOYbBTy07h7cZQ3vMLbux4frANBVgUJxipKl4DK0o2uXx0Qq7g+yMOObIPb17GR8FC2KQdg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/shape-line@4.0.5':
     resolution: {integrity: sha512-5pcbqrkH1l9spGV7nYpfEiA94NlZYGYUEBP8x/Hk4SIyvV1085ewonDj+fPcoOad27JXaq076xZlqJZMxo/9WA==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/shape-polygon@4.0.5':
     resolution: {integrity: sha512-RZwLXtSsnX/KC8Jxjlvp/eSBPs7pU9uN06peWGsteqFUteuMMaCvTPzNpOX0yevDsDKWj8YOklaD89GjrEZ1GQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/shape-square@4.0.5':
     resolution: {integrity: sha512-TMwvEp81/RhJfwRQM/Z7/D56ZZX8RbKd+8OT2DFtk1RJ0OMp+JQT3untwU0rV5pbQsazrlFWj5pnUk5Dy1kTlQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/shape-star@4.0.5':
     resolution: {integrity: sha512-Gg9kg3iTDywyN0PSTliQFa6CFdS4vtTRnSw7Yi1ofAL8KDQHzakpLHoRnKeJJudFHtLOQgJkX7/jVG1yZ82nbw==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/slim@4.0.5':
     resolution: {integrity: sha512-W90wnex7dZsYszd+J98IoKUX5U+7Q53r9USsPl8edpY1vNJvJh0VijY5Hbi1KTIbG1w/9DCn7HAvMLRyv99gYQ==}
+    deprecated: Please update to version 4.1.1
 
   '@tsparticles/updater-life@4.0.5':
     resolution: {integrity: sha512-ncBXJ6HljAK6ddMkjh0NQu2IrkC6IGBtPn6cH+/74kn1S2Aa4m8pOlQzUbvSbvT9NRoLDaWp+/M1vn+Wx8ISvQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/updater-opacity@4.0.5':
     resolution: {integrity: sha512-VNuJyLleqRgRfefmTbTg8bnCEyg1I24zJ46y9TMXwzklrz7A/7go94bt/0SO1nUGpRkOhJ06/2LkRrN1dH4gSQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/updater-out-modes@4.0.5':
     resolution: {integrity: sha512-1SeMXkvEfJB5v6AeMVB2qFXzvzOMLMAhKfgQ4IJpnOttjKEAOn/ATq9t7HGPlaR2yL/uC2X1awyNmKs2U6nuJg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/updater-paint@4.0.5':
     resolution: {integrity: sha512-wb2jdSOwkCaosZqvXicwYn/QADXbQlrGy6EqImX9Mdplssq8wlVGEe8DjfFFhVtbq7w4mY7mXis1rhPRYYzZGg==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/updater-rotate@4.0.5':
     resolution: {integrity: sha512-9uMiwrumR0UQeqKYAx8dzLMdvaqH3aqzP8zK0d5Goib0fVaQaiILdNIHqMGiH/PjJ4JuGTtV5KqeFEwdSCFQ9Q==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
   '@tsparticles/updater-size@4.0.5':
     resolution: {integrity: sha512-MNCJph1o0uwdOXrFQ2myXd3gtn8MnqKb2XMCEZfYRcnGvxzoTPo8H2IH3wqebagj5u8Ah0pk0yWmvBW0239kfQ==}
+    deprecated: Please update to version 4.1.1
     peerDependencies:
       '@tsparticles/engine': 4.0.5
 
@@ -732,6 +781,13 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@uiw/react-heat-map@2.3.4':
+    resolution: {integrity: sha512-E5kEtPXQKEHmYKtRsnlmu1kqBX43NIxMGWGz7rtXwOp0KCA0WFCh1w+WM2CalwAPWYKpptNpjqIB8wo7XyiLzg==}
+    peerDependencies:
+      '@babel/runtime': '>=7.10.0'
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
 
   '@vitejs/plugin-react@4.7.0':
     resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
@@ -1229,6 +1285,19 @@ packages:
     resolution: {integrity: sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==}
     engines: {node: '>=0.10.0'}
 
+  react-router-dom@6.30.6:
+    resolution: {integrity: sha512-0RHKZz7wwffvkU+2MFVT2NnjK44ssLEV+m0CAJaS2Ksmorrwj7WxH00jO0SOCW26/tINUnJHToXblDs33I38YQ==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+
+  react-router@6.30.6:
+    resolution: {integrity: sha512-5HfK7k5im7LTOB0EqCQmfvy4C13G92Ssj1VTmouTK3AJvyjKTnFuCV0vcMAD/JS+JC4DvDIBRrlAeJIFjh5VWg==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      react: '>=16.8'
+
   react-smooth@4.0.4:
     resolution: {integrity: sha512-gnGKTpYwqL0Iii09gHobNolvX4Kiq4PKx6eWBCYYix+8cdw+cGo3do906l1NBPKkSWx1DghC1dlWG9L2uGd61Q==}
     peerDependencies:
@@ -1258,6 +1327,7 @@ packages:
   recharts@2.15.4:
     resolution: {integrity: sha512-UT/q6fwS3c1dHbXv2uFgYJ9BMFHu3fwnd7AYZaEQhXuYQ4hgsxLvsUXzGdKeZrW5xopzDCvuA2N41WJ88I7zIw==}
     engines: {node: '>=14'}
+    deprecated: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
     peerDependencies:
       react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -1637,6 +1707,8 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@remix-run/router@1.23.4': {}
+
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
   '@rollup/rollup-android-arm-eabi@4.60.4':
@@ -1979,6 +2051,12 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@uiw/react-heat-map@2.3.4(@babel/runtime@7.29.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.2
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   '@vitejs/plugin-react@4.7.0(vite@6.4.2(jiti@1.21.7))':
     dependencies:
       '@babel/core': 7.29.0
@@ -2017,9 +2095,9 @@ snapshots:
       postcss: 8.5.14
       postcss-value-parser: 4.2.0
 
-  axios@1.16.1:
+  axios@1.16.1(debug@4.4.3):
     dependencies:
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.5
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -2225,7 +2303,9 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  follow-redirects@1.16.0: {}
+  follow-redirects@1.16.0(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3
 
   form-data@4.0.5:
     dependencies:
@@ -2441,6 +2521,18 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
 
   react-refresh@0.17.0: {}
+
+  react-router-dom@6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@remix-run/router': 1.23.4
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-router: 6.30.6(react@18.3.1)
+
+  react-router@6.30.6(react@18.3.1):
+    dependencies:
+      '@remix-run/router': 1.23.4
+      react: 18.3.1
 
   react-smooth@4.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:

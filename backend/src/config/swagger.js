@@ -34,7 +34,7 @@ Obtén el token haciendo POST a \`/api/v1/auth/login\`.
                     properties: {
                         id: { type: 'string', format: 'uuid' },
                         mac: { type: 'string', example: 'A4:CF:12:45:6B:2F' },
-                        ubicacion: { type: 'string', example: 'Bebedero norte — Edificio de Rectoría' },
+                        ubicacion: { type: 'string', example: 'Tanque norte — Edificio de Rectoría' },
                         version_fw: { type: 'string', example: '1.0.0' },
                         activo: { type: 'boolean' },
                         fecha_alta: { type: 'string', format: 'date-time' }

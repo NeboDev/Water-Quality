@@ -1,93 +1,127 @@
-const { pool } = require('./postgres');
+const fs = require("fs");
+const path = require("path");
+const { pool } = require("./postgres");
 
+const MIGRATIONS_DIR = path.join(__dirname, "..", "migrations");
+
+// Tabla que lleva el registro de que migraciones ya se aplicaron y cuando.
+// Es la que le da versionado real al esquema: antes, correr runMigrations()
+// dos veces era indistinguible de correrlo una vez porque todo era
+// CREATE TABLE IF NOT EXISTS sin ningun tracking.
+async function asegurarTablaControl() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      id          SERIAL PRIMARY KEY,
+      nombre      VARCHAR(255) NOT NULL UNIQUE,
+      aplicada_en TIMESTAMP DEFAULT NOW()
+    );
+  `);
+}
+
+// Lee los archivos de /migrations en orden (el prefijo numerico define el
+// orden de ejecucion, ej. 001_x.js corre antes que 002_y.js)
+function listarMigraciones() {
+  return fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith(".js"))
+    .sort();
+}
+
+async function obtenerAplicadas() {
+  const result = await pool.query("SELECT nombre FROM schema_migrations");
+  return new Set(result.rows.map((r) => r.nombre));
+}
+
+// Aplica todas las migraciones pendientes, en orden, cada una en su propia
+// transaccion. Si una falla, se revierte esa migracion y se detiene el
+// proceso — las anteriores ya aplicadas y commiteadas quedan como estan.
 async function runMigrations() {
-    try {
+  try {
+    await asegurarTablaControl();
 
-        // ── Extension para UUID ───────────────────────────────────────
-        // PostgreSQL no genera UUIDs por defecto esta extension lo habilita
-        await pool.query(`
-      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-    `);
+    const archivos = listarMigraciones();
+    const aplicadas = await obtenerAplicadas();
+    const pendientes = archivos.filter((f) => !aplicadas.has(f));
 
-        // ── Tabla: usuarios ───────────────────────────────────────────
-        // Almacena los usuarios del sistema con su rol asignado
-        // ENUM define los unicos valores validos para el campo rol
-        await pool.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        nombre        VARCHAR(100) NOT NULL,
-        email         VARCHAR(150) NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        rol           VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'operador', 'visualizador', 'icuap')),
-        creado_en     TIMESTAMP DEFAULT NOW()
-      );
-    `);
-
-        // ── Tabla: nodos ──────────────────────────────────────────────
-        // Directorio de todos los ESP32 desplegados
-        // La MAC es unica porque identifica físicamente cada dispositivo
-        await pool.query(`
-      CREATE TABLE IF NOT EXISTS nodos (
-        id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        mac          VARCHAR(17) NOT NULL UNIQUE,
-        ubicacion    VARCHAR(200) NOT NULL,
-        version_fw   VARCHAR(20),
-        activo       BOOLEAN DEFAULT TRUE,
-        fecha_alta   TIMESTAMP DEFAULT NOW()
-      );
-    `);
-
-        // ── Tabla: umbrales ───────────────────────────────────────────
-        // Límites permisibles por parámetro y por nodo
-        // Referencia a nodos con ON DELETE CASCADE:
-        // si se elimina un nodo sus umbrales se eliminan automaticamente
-        await pool.query(`
-      CREATE TABLE IF NOT EXISTS umbrales (
-        id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        nodo_id    UUID NOT NULL REFERENCES nodos(id) ON DELETE CASCADE,
-        parametro  VARCHAR(20) NOT NULL CHECK (parametro IN ('ph', 'temperatura', 'conductividad', 'turbidez', 'tds')),
-        valor_min  NUMERIC(10,4) NOT NULL,
-        valor_max  NUMERIC(10,4) NOT NULL,
-        UNIQUE(nodo_id, parametro)
-      );
-    `);
-
-        // ── Tabla: reportes_nom127 ────────────────────────────────────
-        // Historial de reportes generados para el ICUAP
-        // Referencia tanto al nodo como al usuario que lo genero
-        await pool.query(`
-      CREATE TABLE IF NOT EXISTS reportes_nom127 (
-        id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        nodo_id        UUID NOT NULL REFERENCES nodos(id) ON DELETE CASCADE,
-        generado_por   UUID NOT NULL REFERENCES usuarios(id),
-        fecha          DATE NOT NULL DEFAULT CURRENT_DATE,
-        cumple_nom     BOOLEAN NOT NULL,
-        pdf_url        TEXT,
-        creado_en      TIMESTAMP DEFAULT NOW()
-      );
-    `);
-
-        // ── Tabla: alertas ────────────────────────────────────────────
-        // Registro de cada anomalia detectada por el motor de alertas
-        await pool.query(`
-      CREATE TABLE IF NOT EXISTS alertas (
-        id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        nodo_id       UUID NOT NULL REFERENCES nodos(id) ON DELETE CASCADE,
-        parametro     VARCHAR(20) NOT NULL,
-        valor_leido   NUMERIC(10,4) NOT NULL,
-        valor_min     NUMERIC(10,4) NOT NULL,
-        valor_max     NUMERIC(10,4) NOT NULL,
-        resuelta      BOOLEAN DEFAULT FALSE,
-        creado_en     TIMESTAMP DEFAULT NOW()
-      );
-    `);
-
-        console.log('Migraciones ejecutadas correctamente');
-
-    } catch (error) {
-        console.error('Error ejecutando migraciones:', error.message);
-        process.exit(1);
+    if (pendientes.length === 0) {
+      console.log("Migraciones al dia, no hay pendientes");
+      return;
     }
+
+    for (const archivo of pendientes) {
+      const migracion = require(path.join(MIGRATIONS_DIR, archivo));
+      const cliente = await pool.connect();
+      try {
+        await cliente.query("BEGIN");
+        await migracion.up(cliente);
+        await cliente.query(
+          "INSERT INTO schema_migrations (nombre) VALUES ($1)",
+          [archivo],
+        );
+        await cliente.query("COMMIT");
+        console.log(`Migracion aplicada: ${archivo}`);
+      } catch (error) {
+        await cliente.query("ROLLBACK");
+        console.error(`Error aplicando migracion ${archivo}:`, error.message);
+        throw error;
+      } finally {
+        cliente.release();
+      }
+    }
+
+    console.log(`${pendientes.length} migracion(es) aplicada(s) correctamente`);
+  } catch (error) {
+    console.error("Error ejecutando migraciones:", error.message);
+    process.exit(1);
+  }
+}
+
+// Revierte la ultima migracion aplicada (o las ultimas `n` si se especifica).
+// Uso manual: node -e "require('./config/migrations').rollback(1)"
+async function rollback(n = 1) {
+  try {
+    await asegurarTablaControl();
+
+    const result = await pool.query(
+      "SELECT nombre FROM schema_migrations ORDER BY id DESC LIMIT $1",
+      [n],
+    );
+
+    if (result.rows.length === 0) {
+      console.log("No hay migraciones para revertir");
+      return;
+    }
+
+    for (const { nombre } of result.rows) {
+      const migracion = require(path.join(MIGRATIONS_DIR, nombre));
+      if (!migracion.down) {
+        console.error(
+          `La migracion ${nombre} no define down(), no se puede revertir automaticamente`,
+        );
+        continue;
+      }
+      const cliente = await pool.connect();
+      try {
+        await cliente.query("BEGIN");
+        await migracion.down(cliente);
+        await cliente.query("DELETE FROM schema_migrations WHERE nombre = $1", [
+          nombre,
+        ]);
+        await cliente.query("COMMIT");
+        console.log(`Migracion revertida: ${nombre}`);
+      } catch (error) {
+        await cliente.query("ROLLBACK");
+        console.error(`Error revirtiendo migracion ${nombre}:`, error.message);
+        throw error;
+      } finally {
+        cliente.release();
+      }
+    }
+  } catch (error) {
+    console.error("Error revirtiendo migraciones:", error.message);
+    process.exit(1);
+  }
 }
 
 module.exports = runMigrations;
+module.exports.rollback = rollback;

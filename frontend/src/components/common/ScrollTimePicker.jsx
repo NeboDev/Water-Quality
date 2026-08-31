@@ -123,8 +123,8 @@ export default function ScrollTimePicker({ value, onChange, disabled }) {
 
   return (
     <div
-      className={`flex items-center gap-1 bg-slate-50/50 border border-slate-200 rounded-xl px-1.5 py-1 h-8.5 w-24 justify-center flex-shrink-0 transition-all ${
-        disabled ? "opacity-50 cursor-not-allowed" : "hover:border-slate-300"
+      className={`flex items-center gap-1 bg-white border border-slate-300 px-1.5 py-1 h-8.5 w-24 justify-center flex-shrink-0 transition-colors ${
+        disabled ? "opacity-50 cursor-not-allowed" : "hover:border-kanan-400"
       }`}
       title={disabled ? "" : "Desplaza (scroll) con el ratón o haz clic para editar la hora"}
     >
@@ -135,7 +135,7 @@ export default function ScrollTimePicker({ value, onChange, disabled }) {
         onChange={handleHourChange}
         onBlur={handleHourBlur}
         disabled={disabled}
-        className="text-center font-mono text-xs font-bold text-slate-700 bg-transparent border-none outline-none focus:text-buap-600 focus:bg-slate-100/80 rounded-md transition-colors"
+        className="text-center font-mono text-xs font-bold text-slate-700 bg-transparent border-none outline-none focus:text-kanan-600 focus:bg-slate-100 transition-colors"
         style={{ width: "24px" }}
         placeholder="HH"
         inputMode="numeric"
@@ -148,7 +148,7 @@ export default function ScrollTimePicker({ value, onChange, disabled }) {
         onChange={handleMinChange}
         onBlur={handleMinBlur}
         disabled={disabled}
-        className="text-center font-mono text-xs font-bold text-slate-700 bg-transparent border-none outline-none focus:text-buap-600 focus:bg-slate-100/80 rounded-md transition-colors"
+        className="text-center font-mono text-xs font-bold text-slate-700 bg-transparent border-none outline-none focus:text-kanan-600 focus:bg-slate-100 transition-colors"
         style={{ width: "24px" }}
         placeholder="MM"
         inputMode="numeric"

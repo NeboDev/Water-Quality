@@ -16,6 +16,38 @@ export const PARAM_COLORS = {
 
 export const PARAMS = ["ph", "turbidez", "conductividad", "temperatura", "tds"];
 
+// Estado real de un nodo para la vista Nodos y su modal de detalle — nunca viene
+// de un simulador: se deriva de nodo.activo, alertas abiertas (node.status ya trae
+// "alerta" cuando corresponde, ver App.jsx) y frescura de la última lectura, con el
+// mismo umbral de 5 min que usa muestraScheduler.js en el backend.
+export const NODE_FRESH_MS = 5 * 60 * 1000;
+
+export const NODE_STATUS_META = {
+  live: { label: "En línea", dot: "#4f7f5b" },
+  alert: { label: "Alerta", dot: "#b03a2b" },
+  silent: { label: "Sin señal", dot: "#9a9a9c" },
+  off: { label: "Inactivo", dot: "#5a5c5e" },
+};
+
+export function computeNodeStatus(node, now = Date.now()) {
+  if (!node.activo) return "off";
+  if (node.status === "alerta") return "alert";
+  if (!node.timestamp) return "silent";
+  return now - new Date(node.timestamp).getTime() <= NODE_FRESH_MS ? "live" : "silent";
+}
+
+export function timeAgo(ts) {
+  if (!ts) return "sin datos";
+  const diffMs = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "justo ahora";
+  if (mins < 60) return `hace ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `hace ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  return `hace ${days} d`;
+}
+
 export function telemetryToPoint(entry, param) {
   const d = new Date(entry.timestamp);
   return {

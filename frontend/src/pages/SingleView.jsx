@@ -31,7 +31,7 @@ export default function SingleView({
       {loadingTelemetry && !nodeReady && (
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-9 h-9 rounded-full border-2 border-buap-200 border-t-buap-700 animate-spin-slow" />
+            <div className="w-9 h-9 rounded-full border-2 border-kanan-200 border-t-kanan-700 animate-spin-slow" />
             <p className="text-xs text-slate-400">Cargando telemetría…</p>
           </div>
         </div>
@@ -41,7 +41,7 @@ export default function SingleView({
       {!loadingTelemetry && selectedNode?.sinDatos && (
         <div className="flex-1 flex items-center justify-center animate-fade-in">
           <div className="flex flex-col items-center gap-4 max-w-xs text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-slate-100 flex items-center justify-center">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <rect x="4" y="8" width="24" height="18" rx="3" stroke="#94a3b8" strokeWidth="1.5" />
                 <path d="M10 14h12M10 19h7" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
@@ -61,7 +61,7 @@ export default function SingleView({
             </div>
             <button
               onClick={() => loadTelemetry(selectedNode)}
-              className="btn-ghost text-xs border border-slate-200"
+              className="btn-ghost text-xs border border-slate-300"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                 <path d="M2 6.5a4.5 4.5 0 014.5-4.5A4.5 4.5 0 0111 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchReportes, generarReporte, descargarPdfReporte } from "../api";
+import CardCorners from "../components/common/CardCorners";
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -29,17 +30,17 @@ function downloadBlob(blob, filename) {
 
 function StatusBadge({ cumple }) {
   return cumple ? (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-status-ok/10 text-status-ok border border-status-ok/40">
       <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-        <circle cx="4" cy="4" r="3.5" fill="#10b981" />
+        <circle cx="4" cy="4" r="3.5" fill="#4f7f5b" />
         <path d="M2.5 4l1 1 2-2" stroke="#fff" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       Cumple NOM-127
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-status-alert/10 text-status-alert border border-status-alert/40">
       <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-        <circle cx="4" cy="4" r="3.5" fill="#ef4444" />
+        <circle cx="4" cy="4" r="3.5" fill="#b03a2b" />
         <path d="M2.5 2.5l3 3M5.5 2.5l-3 3" stroke="#fff" strokeWidth="1" strokeLinecap="round" />
       </svg>
       No cumple
@@ -137,9 +138,10 @@ export default function Reportes({ nodes }) {
       <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-4">
 
         {/* Generate card */}
-        <div className="card p-5 border border-slate-100">
+        <div className="card p-5">
+          <CardCorners />
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-buap-50 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-kanan-100 flex items-center justify-center">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <rect x="2" y="1" width="10" height="13" rx="1.5" stroke="#2333ce" strokeWidth="1.3" />
                 <path d="M5 5h6M5 7.5h6M5 10h4" stroke="#2333ce" strokeWidth="1.2" strokeLinecap="round" />
@@ -148,7 +150,7 @@ export default function Reportes({ nodes }) {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-bold text-buap-900 leading-none">Nuevo reporte</p>
+              <p className="text-sm font-bold text-kanan-900 leading-none">Nuevo reporte</p>
               <p className="text-[10px] text-slate-400 mt-0.5">Cumplimiento NOM-127-SSA1-2021</p>
             </div>
           </div>
@@ -162,7 +164,7 @@ export default function Reportes({ nodes }) {
               <select
                 value={nodoId}
                 onChange={(e) => setNodoId(e.target.value)}
-                className="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-buap-300 focus:border-buap-400 transition"
+                className="w-full text-xs border border-slate-300 px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-kanan-600 focus:border-kanan-600 transition-colors"
               >
                 <option value="">Seleccionar nodo…</option>
                 {nodes.map((n) => (
@@ -183,7 +185,7 @@ export default function Reportes({ nodes }) {
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
                 max={fechaFin}
-                className="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-buap-300 transition"
+                className="w-full text-xs border border-slate-300 px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-kanan-600 transition-colors"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -196,26 +198,26 @@ export default function Reportes({ nodes }) {
                 onChange={(e) => setFechaFin(e.target.value)}
                 min={fechaInicio}
                 max={new Date().toISOString().slice(0, 10)}
-                className="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-buap-300 transition"
+                className="w-full text-xs border border-slate-300 px-3 py-2 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-kanan-600 transition-colors"
               />
             </div>
 
             {/* Error */}
             {genError && (
-              <p className="text-[11px] text-red-500 bg-red-50 rounded-lg px-3 py-2 border border-red-100">
+              <p className="text-[11px] text-status-alert bg-status-alert/10 px-3 py-2 border border-status-alert/40">
                 {genError}
               </p>
             )}
 
             {/* Success feedback */}
             {lastGenerated && (
-              <div className="rounded-lg px-3 py-2 bg-emerald-50 border border-emerald-200 flex items-center gap-2">
+              <div className="px-3 py-2 bg-status-ok/10 border border-status-ok/40 flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <circle cx="7" cy="7" r="6" fill="#10b981" />
+                  <circle cx="7" cy="7" r="6" fill="#4f7f5b" />
                   <path d="M4 7l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <div>
-                  <p className="text-[11px] font-semibold text-emerald-800">PDF generado y descargado</p>
+                  <p className="text-[11px] font-semibold text-status-ok">PDF generado y descargado</p>
                   <StatusBadge cumple={lastGenerated.cumpleNom} />
                 </div>
               </div>
@@ -246,18 +248,19 @@ export default function Reportes({ nodes }) {
       </div>
 
       {/* ── Right panel: list ── */}
-      <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm min-h-[400px] lg:min-h-0">
+      <div className="relative flex-1 flex flex-col bg-white border border-slate-300 overflow-hidden min-h-[400px] lg:min-h-0">
+        <CardCorners />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-300 bg-slate-50 flex-shrink-0">
           <div>
-            <h2 className="text-sm font-bold text-buap-900">Reportes generados</h2>
+            <h2 className="text-sm font-bold text-kanan-900">Reportes generados</h2>
             <p className="text-[10px] text-slate-400 mt-0.5">Historial de reportes NOM-127</p>
           </div>
           <button
             onClick={loadReportes}
             disabled={loading}
-            className="p-2 rounded-xl text-slate-400 hover:text-buap-600 hover:bg-buap-50 transition-colors disabled:opacity-40"
+            className="p-2 text-slate-400 hover:text-kanan-600 hover:bg-kanan-100 transition-colors disabled:opacity-40"
             title="Actualizar lista"
           >
             <svg
@@ -276,7 +279,7 @@ export default function Reportes({ nodes }) {
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="flex flex-col items-center gap-3 text-slate-400">
-                <div className="w-8 h-8 rounded-full border-2 border-buap-200 border-t-buap-600 animate-spin-slow" />
+                <div className="w-8 h-8 rounded-full border-2 border-kanan-200 border-t-kanan-600 animate-spin-slow" />
                 <p className="text-xs font-medium">Cargando reportes…</p>
               </div>
             </div>
@@ -284,11 +287,11 @@ export default function Reportes({ nodes }) {
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-slate-400 py-12 flex flex-col items-center gap-3">
                 <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                  <circle cx="18" cy="18" r="16" stroke="#fca5a5" strokeWidth="1.5" />
-                  <path d="M18 10v10M18 24v2" stroke="#fca5a5" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="18" cy="18" r="16" stroke="#b03a2b" strokeWidth="1.5" />
+                  <path d="M18 10v10M18 24v2" stroke="#b03a2b" strokeWidth="2" strokeLinecap="round" />
                 </svg>
-                <p className="text-xs font-semibold text-red-400">{error}</p>
-                <button onClick={loadReportes} className="btn-ghost text-xs border border-slate-200">
+                <p className="text-xs font-semibold text-status-alert">{error}</p>
+                <button onClick={loadReportes} className="btn-ghost text-xs border border-slate-300">
                   Reintentar
                 </button>
               </div>
@@ -308,7 +311,7 @@ export default function Reportes({ nodes }) {
             </div>
           ) : (
             <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-white border-b border-slate-100 z-10">
+              <thead className="sticky top-0 bg-white border-b border-slate-300 z-10">
                 <tr>
                   {["Nodo / Ubicación", "Fecha generación", "Periodo", "Resultado", "Generado por", ""].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">
@@ -356,11 +359,11 @@ export default function Reportes({ nodes }) {
                       <button
                         onClick={() => handleDescargar(r)}
                         disabled={downloadingId === r.id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-buap-700 bg-buap-50 hover:bg-buap-100 border border-buap-200 transition-colors disabled:opacity-50 disabled:cursor-wait whitespace-nowrap"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-kanan-700 bg-kanan-100 hover:bg-kanan-200 border border-kanan-200 transition-colors disabled:opacity-50 disabled:cursor-wait whitespace-nowrap"
                         title="Descargar PDF"
                       >
                         {downloadingId === r.id ? (
-                          <span className="w-3 h-3 rounded-full border-2 border-buap-300 border-t-buap-700 animate-spin" />
+                          <span className="w-3 h-3 rounded-full border-2 border-kanan-300 border-t-kanan-700 animate-spin" />
                         ) : (
                           <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                             <path d="M5.5 1v7M2.5 5.5l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -379,7 +382,7 @@ export default function Reportes({ nodes }) {
 
         {/* Footer count */}
         {!loading && !error && reportes.length > 0 && (
-          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex-shrink-0">
+          <div className="px-5 py-3 border-t border-slate-300 bg-slate-50 flex-shrink-0">
             <p className="text-[10px] text-slate-400">
               {reportes.length} reporte{reportes.length !== 1 ? "s" : ""} en total
             </p>

@@ -112,12 +112,16 @@ export default function NodoForm({ onSuccess, onClose }) {
             type="text"
             value={form.ubicacion}
             onChange={set("ubicacion")}
-            placeholder="Ej. Bebedero norte — Rectoría"
+            placeholder="Ej. Tanque norte — Rectoría"
             error={errors.ubicacion}
           />
 
           {/* Opciones avanzadas (Versión de Firmware y Umbrales) */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden mt-1">
+          {/* flex-shrink-0: sin esto, al ser overflow-hidden dentro de un flex-col con
+              max-height, el navegador reduce este bloque por debajo de su contenido real
+              (min-height automático de flex items pasa a 0 cuando overflow != visible),
+              lo que rompe el scroll del formulario completo. */}
+          <div className="border border-slate-300 overflow-hidden mt-1 flex-shrink-0">
             <button
               type="button"
               onClick={() => setShowAdvanced((prev) => !prev)}
@@ -136,16 +140,16 @@ export default function NodoForm({ onSuccess, onClose }) {
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`text-slate-400 transition-transform duration-200 ${showAdvanced ? "rotate-180 text-buap-500" : ""}`}
+                className={`text-slate-400 transition-transform duration-200 ${showAdvanced ? "rotate-180 text-kanan-500" : ""}`}
               >
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
 
             {showAdvanced && (
-              <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-4 animate-fade-in">
+              <div className="p-4 bg-white border-t border-slate-300 flex flex-col gap-4 animate-fade-in">
                 {/* Versión FW (opcional) */}
-                <div className="flex flex-col gap-1.5 pb-3 border-b border-slate-100">
+                <div className="flex flex-col gap-1.5 pb-3 border-b border-slate-200">
                   <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide" htmlFor="nodo-fw">
                     Versión firmware
                     <span className="ml-1.5 text-[10px] font-normal text-slate-400 font-sans lowercase">(opcional)</span>
@@ -159,7 +163,7 @@ export default function NodoForm({ onSuccess, onClose }) {
                     placeholder="1.0.0"
                   />
                   {errors.version_fw && (
-                    <p className="text-[10px] text-red-500 font-medium">{errors.version_fw}</p>
+                    <p className="text-[10px] text-status-alert font-medium">{errors.version_fw}</p>
                   )}
                 </div>
 
@@ -184,7 +188,7 @@ export default function NodoForm({ onSuccess, onClose }) {
                     };
                     const pInfo = labels[param] || { label: param, unit: "" };
                     return (
-                      <div key={param} className="flex items-center justify-between gap-4 py-1.5 border-b border-slate-50 last:border-0">
+                      <div key={param} className="flex items-center justify-between gap-4 py-1.5 border-b border-slate-200 last:border-0">
                         <div className="min-w-[100px]">
                           <p className="text-xs font-semibold text-slate-700">{pInfo.label}</p>
                           {pInfo.unit && <p className="text-[9px] text-slate-400 font-mono">{pInfo.unit}</p>}
@@ -200,6 +204,7 @@ export default function NodoForm({ onSuccess, onClose }) {
                                 ...prev,
                                 [param]: { ...prev[param], valor_min: parseFloat(e.target.value) || 0 }
                               }))}
+                              onWheel={(e) => e.currentTarget.blur()}
                               className="w-16 input-base text-xs text-center py-1 px-1.5 h-8 font-mono bg-slate-50/50"
                             />
                           </div>
@@ -213,6 +218,7 @@ export default function NodoForm({ onSuccess, onClose }) {
                                 ...prev,
                                 [param]: { ...prev[param], valor_max: parseFloat(e.target.value) || 0 }
                               }))}
+                              onWheel={(e) => e.currentTarget.blur()}
                               className="w-16 input-base text-xs text-center py-1 px-1.5 h-8 font-mono bg-slate-50/50"
                             />
                           </div>

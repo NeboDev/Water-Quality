@@ -80,6 +80,11 @@ export async function eliminarNodo(id) {
 
 // terlemetria
 
+export async function fetchTelemetriaLive() {
+  const { data } = await api.get("/telemetria/live");
+  return data;
+}
+
 export async function fetchTelemetria(nodoId, limit = 50) {
   const { data } = await api.get(`/telemetria/${nodoId}?limit=${limit}`);
   return data.lecturas;

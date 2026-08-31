@@ -6,6 +6,7 @@ import {
 import { NOM_127_LIMITS, PARAM_COLORS, buildHistory } from "../constants";
 import { fetchTelemetria, fetchTelemetriaRango } from "../api";
 import ScrollTimePicker from "./common/ScrollTimePicker";
+import CardCorners from "./common/CardCorners";
 
 const NODE_PALETTE = [
   "#6366f1", // indigo
@@ -24,8 +25,8 @@ const CustomTooltip = ({ active, payload, nodeNames, unit }) => {
   if (!active || !payload?.length) return null;
   const pt = payload[0].payload;
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-card-md text-xs min-w-[160px]">
-      <p className="text-slate-400 font-medium mb-1.5 border-b border-slate-100 pb-1">
+    <div className="bg-white border border-slate-300 px-3 py-2.5 text-xs min-w-[160px]">
+      <p className="text-slate-400 font-medium mb-1.5 border-b border-slate-200 pb-1">
         {pt.fullLabel ?? pt.time}
       </p>
       {payload.map((entry, i) => {
@@ -37,7 +38,7 @@ const CustomTooltip = ({ active, payload, nodeNames, unit }) => {
               <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: entry.color }} />
               <span className="text-slate-600 truncate max-w-[120px]" title={name}>{name}</span>
             </div>
-            <span className="font-mono font-semibold text-buap-800">
+            <span className="font-mono font-semibold text-kanan-800">
               {entry.value !== undefined ? Number(entry.value).toFixed(2) : "—"}
               <span className="font-normal text-slate-400 ml-0.5">{unit}</span>
             </span>
@@ -244,16 +245,17 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-3xl shadow-card-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white border border-slate-300 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <CardCorners />
         {/* Header */}
-        <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+        <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-slate-300 flex-shrink-0">
           <div>
             <div className="flex items-center gap-2.5 mb-1 flex-wrap">
               <span className="w-3 h-3 rounded-full" style={{ background: paramColor }} />
-              <h2 className="text-lg font-bold text-buap-900 tracking-tight">
+              <h2 className="text-lg font-bold text-kanan-900 tracking-tight">
                 Comparativa: {limits.label}
               </h2>
-              <span className="chip bg-slate-100 text-slate-500 border-slate-200 text-[11px]">
+              <span className="chip bg-slate-100 text-slate-500 border-slate-300 text-[11px]">
                 {isRangeActive ? "Rango Personalizado" : "Últimas 10 muestras por nodo"}
               </span>
             </div>
@@ -267,10 +269,10 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
               <button
                 type="button"
                 onClick={() => setShowDatePicker(!showDatePicker)}
-                className={`px-3 py-1.5 rounded-xl border text-xs transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border text-xs transition-colors flex items-center gap-1.5 ${
                   isRangeActive
-                    ? "bg-amber-50 border-amber-200 text-amber-600 font-semibold"
-                    : "bg-slate-50 border-slate-200 text-slate-500 hover:text-buap-700 hover:bg-slate-100"
+                    ? "bg-status-warn/10 border-status-warn text-status-warn font-semibold"
+                    : "bg-slate-50 border-slate-300 text-slate-500 hover:text-kanan-700 hover:bg-slate-100"
                 }`}
                 title="Seleccionar rango de fechas"
               >
@@ -285,8 +287,9 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
 
               {/* Date Picker Dropdown */}
               {showDatePicker && (
-                <div className="absolute right-0 top-full mt-2 w-68 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 flex flex-col gap-3 animate-fade-in text-left">
-                  <p className="text-[11px] font-bold text-buap-900 border-b border-slate-100 pb-1.5">
+                <div className="absolute right-0 top-full mt-2 w-68 bg-white border border-slate-300 p-4 z-50 flex flex-col gap-3 animate-fade-in text-left">
+                  <CardCorners />
+                  <p className="text-[11px] font-bold text-kanan-900 border-b border-slate-300 pb-1.5">
                     Rango de tiempo
                   </p>
 
@@ -327,7 +330,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
                   </div>
 
                   {rangeError && (
-                    <p className="text-[9px] text-red-500 font-medium">{rangeError}</p>
+                    <p className="text-[9px] text-status-alert font-medium">{rangeError}</p>
                   )}
 
                   <div className="flex gap-1.5 mt-1">
@@ -335,7 +338,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
                       <button
                         type="button"
                         onClick={handleResetRange}
-                        className="btn-ghost flex-1 justify-center py-1 text-[10px] text-slate-500 border border-slate-200"
+                        className="btn-ghost flex-1 justify-center py-1 text-[10px] text-slate-500 border border-slate-300"
                       >
                         Limpiar
                       </button>
@@ -359,7 +362,7 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
               disabled={loading || rangeLoading}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -374,24 +377,24 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
           {/* carga y sincronizacion */}
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <span className="w-8 h-8 border-4 border-slate-200 border-t-buap-600 rounded-full animate-spin" />
+              <span className="w-8 h-8 border-4 border-slate-200 border-t-kanan-600 rounded-full animate-spin" />
               <p className="text-xs text-slate-400">Cargando y sincronizando historiales…</p>
             </div>
           )}
 
           {error && !loading && (
             <div className="flex items-center justify-center py-20">
-              <p className="text-red-500 font-medium bg-red-50 px-4 py-2.5 rounded-xl border border-red-100">{error}</p>
+              <p className="text-status-alert font-medium bg-status-alert/10 px-4 py-2.5 border border-status-alert/40">{error}</p>
             </div>
           )}
 
           {!loading && !error && (
             <>
               {/* tabla de comparacion */}
-              <div className="w-full overflow-x-auto overflow-y-hidden border border-slate-100 rounded-2xl flex-shrink-0">
+              <div className="w-full overflow-x-auto overflow-y-hidden border border-slate-300 flex-shrink-0">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
+                    <tr className="bg-slate-50 border-b border-slate-300">
                       <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Nodo</th>
                       <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wide text-right">Lectura Actual</th>
                       <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wide text-right">
@@ -411,10 +414,10 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
                         <tr key={stat.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-5 py-3.5 flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: stat.color }} />
-                            <span className="text-xs font-bold text-buap-900 truncate max-w-[180px]">{stat.name}</span>
+                            <span className="text-xs font-bold text-kanan-900 truncate max-w-[180px]">{stat.name}</span>
                           </td>
                           <td className="px-5 py-3.5 text-right">
-                            <span className={`font-mono text-xs font-bold ${isOut ? "text-red-500" : "text-buap-900"}`}>
+                            <span className={`font-mono text-xs font-bold ${isOut ? "text-status-alert" : "text-kanan-900"}`}>
                               {stat.current !== undefined ? stat.current.toFixed(2) : "—"}
                               <span className="font-normal text-slate-400 ml-0.5 text-[10px]">{limits.unit}</span>
                             </span>
@@ -455,12 +458,12 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
                   <p>Normativa NOM-127: {limits.min} – {limits.max} {limits.unit || "—"}</p>
                   <div className="flex items-center gap-4">
                     <span className="flex items-center gap-1.5">
-                      <span className="inline-block w-5 h-px border-t border-dashed border-red-300" />
+                      <span className="inline-block w-5 h-px border-t border-dashed border-status-alert" />
                       Límite Máximo
                     </span>
                     {limits.min > 0 && (
                       <span className="flex items-center gap-1.5">
-                        <span className="inline-block w-5 h-px border-t border-dashed border-amber-300" />
+                        <span className="inline-block w-5 h-px border-t border-dashed border-status-warn" />
                         Límite Mínimo
                       </span>
                     )}
@@ -492,10 +495,10 @@ export default function MultiNodeExpandedChart({ param, nodes, onClose }) {
                         }
                       />
                       {limits.max < 9999 && (
-                        <ReferenceLine y={limits.max} stroke="#fca5a5" strokeDasharray="5 5" strokeWidth={1.5} />
+                        <ReferenceLine y={limits.max} stroke="#b03a2b" strokeDasharray="5 5" strokeWidth={1.5} />
                       )}
                       {limits.min > 0 && (
-                        <ReferenceLine y={limits.min} stroke="#fcd34d" strokeDasharray="5 5" strokeWidth={1.5} />
+                        <ReferenceLine y={limits.min} stroke="#c8901f" strokeDasharray="5 5" strokeWidth={1.5} />
                       )}
                       {nodeStats.map((stat, idx) => (
                         <Line

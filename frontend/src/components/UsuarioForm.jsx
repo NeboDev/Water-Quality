@@ -14,7 +14,7 @@ const ROLES = [
 ];
 
 const ROLE_COLORS = {
-  admin:        "bg-buap-700 border-buap-700 text-white",
+  admin:        "bg-kanan-700 border-kanan-700 text-white",
   icuap:        "bg-violet-600 border-violet-600 text-white",
   operador:     "bg-amber-500 border-amber-500 text-white",
   visualizador: "bg-slate-500 border-slate-500 text-white",
@@ -184,10 +184,10 @@ export default function UsuarioForm({ onSuccess, onClose }) {
                   key={r.value}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, rol: r.value }))}
-                  className={`flex flex-col items-start gap-0.5 px-3 py-2.5 rounded-xl border text-left transition-all duration-150 ${
+                  className={`flex flex-col items-start gap-0.5 px-3 py-2.5 border text-left transition-colors duration-150 ${
                     form.rol === r.value
                       ? ROLE_COLORS[r.value]
-                      : "bg-white border-slate-200 text-slate-600 hover:border-buap-300 hover:text-buap-800"
+                      : "bg-white border-slate-300 text-slate-600 hover:border-kanan-400 hover:text-kanan-800"
                   }`}
                 >
                   <span className="text-xs font-bold leading-none">{r.label}</span>

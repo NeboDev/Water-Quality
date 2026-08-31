@@ -1,4 +1,7 @@
 allowBuilds:
-  '@scarf/scarf': false
   bcrypt: true
-  msgpackr-extract: false
+  msgpackr-extract: true
+  "@scarf/scarf": false
+  cpu-features: false
+  protobufjs: false
+  ssh2: true

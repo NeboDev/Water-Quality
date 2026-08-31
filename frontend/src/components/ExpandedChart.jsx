@@ -6,14 +6,15 @@ import {
 import { NOM_127_LIMITS, PARAM_COLORS, buildHistory } from "../constants";
 import { fetchTelemetria, fetchTelemetriaRango } from "../api";
 import ScrollTimePicker from "./common/ScrollTimePicker";
+import CardCorners from "./common/CardCorners";
 
 const CustomTooltip = ({ active, payload, unit }) => {
   if (!active || !payload?.length) return null;
   const pt = payload[0].payload;
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-card-md text-xs">
+    <div className="bg-white border border-slate-300 px-3 py-2.5 text-xs">
       <p className="text-slate-400 font-medium mb-1">{pt.fullLabel ?? pt.time}</p>
-      <p className="font-bold text-buap-900 text-sm">
+      <p className="font-bold text-kanan-900 text-sm">
         {payload[0].value}{" "}
         <span className="font-normal text-slate-400 text-xs">{unit}</span>
       </p>
@@ -148,17 +149,18 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-3xl shadow-card-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white border border-slate-300 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <CardCorners />
 
         {/* Header */}
-        <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+        <div className="flex items-start justify-between px-7 pt-6 pb-4 border-b border-slate-300 flex-shrink-0">
           <div>
             <div className="flex items-center gap-2.5 mb-1 flex-wrap">
               <div className="w-3 h-3 rounded-full" style={{ background: color }} />
-              <h2 className="text-lg font-bold text-buap-900 tracking-tight">
+              <h2 className="text-lg font-bold text-kanan-900 tracking-tight">
                 {limits.label}
               </h2>
-              <span className="chip bg-slate-100 text-slate-500 border-slate-200 text-[11px]">
+              <span className="chip bg-slate-100 text-slate-500 border-slate-300 text-[11px]">
                 {isRangeActive ? "Rango Personalizado" : "Últimas 30 muestras"}
               </span>
             </div>
@@ -172,10 +174,10 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
               <button
                 type="button"
                 onClick={() => setShowDatePicker(!showDatePicker)}
-                className={`px-3 py-1.5 rounded-xl border text-xs transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 border text-xs transition-colors flex items-center gap-1.5 ${
                   isRangeActive
-                    ? "bg-amber-50 border-amber-200 text-amber-600 font-semibold"
-                    : "bg-slate-50 border-slate-200 text-slate-500 hover:text-buap-700 hover:bg-slate-100"
+                    ? "bg-status-warn/10 border-status-warn text-status-warn font-semibold"
+                    : "bg-slate-50 border-slate-300 text-slate-500 hover:text-kanan-700 hover:bg-slate-100"
                 }`}
                 title="Seleccionar rango de fechas"
               >
@@ -190,8 +192,9 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
 
               {/* Date Picker Dropdown */}
               {showDatePicker && (
-                <div className="absolute right-0 top-full mt-2 w-68 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 flex flex-col gap-3 animate-fade-in text-left">
-                  <p className="text-[11px] font-bold text-buap-900 border-b border-slate-100 pb-1.5">
+                <div className="absolute right-0 top-full mt-2 w-68 bg-white border border-slate-300 p-4 z-50 flex flex-col gap-3 animate-fade-in text-left">
+                  <CardCorners />
+                  <p className="text-[11px] font-bold text-kanan-900 border-b border-slate-300 pb-1.5">
                     Rango de tiempo
                   </p>
 
@@ -232,7 +235,7 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
                   </div>
 
                   {rangeError && (
-                    <p className="text-[9px] text-red-500 font-medium">{rangeError}</p>
+                    <p className="text-[9px] text-status-alert font-medium">{rangeError}</p>
                   )}
 
                   <div className="flex gap-1.5 mt-1">
@@ -240,7 +243,7 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
                       <button
                         type="button"
                         onClick={handleResetRange}
-                        className="btn-ghost flex-1 justify-center py-1 text-[10px] text-slate-500 border border-slate-200"
+                        className="btn-ghost flex-1 justify-center py-1 text-[10px] text-slate-500 border border-slate-300"
                       >
                         Limpiar
                       </button>
@@ -264,7 +267,7 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
               disabled={loading || rangeLoading}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -275,7 +278,7 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-px bg-slate-100 border-b border-slate-100 flex-shrink-0">
+        <div className="grid grid-cols-4 gap-px bg-slate-300 border-b border-slate-300 flex-shrink-0">
           {[
             { label: "Promedio", value: avg, unit: limits.unit || "pH" },
             { label: "Mínimo", value: minV, unit: limits.unit || "pH" },
@@ -285,9 +288,9 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
             <div key={label} className="bg-white px-6 py-3 relative">
               <p className="label-sm text-[10px] mb-0.5">{label}</p>
               {loading || rangeLoading ? (
-                <div className="h-7 bg-slate-100 rounded w-16 animate-pulse mt-1"></div>
+                <div className="h-7 bg-slate-100 w-16 animate-pulse mt-1"></div>
               ) : (
-                <p className={`font-mono text-xl font-bold ${warn ? "text-red-500" : "text-buap-900"}`}>
+                <p className={`font-mono text-xl font-bold ${warn ? "text-status-alert" : "text-kanan-900"}`}>
                   {value}
                   <span className="text-xs font-normal text-slate-400 ml-1">{unit}</span>
                 </p>
@@ -300,12 +303,12 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
         <div className="flex-1 px-6 py-5 min-h-0 relative">
           {(loading || rangeLoading) && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-              <span className="w-8 h-8 border-4 border-slate-200 border-t-buap-600 rounded-full animate-spin" />
+              <span className="w-8 h-8 border-4 border-slate-200 border-t-kanan-600 rounded-full animate-spin" />
             </div>
           )}
           {error && !loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <p className="text-red-500 font-medium bg-red-50 px-4 py-2 rounded-xl">{error}</p>
+              <p className="text-status-alert font-medium bg-status-alert/10 px-4 py-2">{error}</p>
             </div>
           )}
 
@@ -315,12 +318,12 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
             </p>
             <div className="flex items-center gap-4 text-xs text-slate-400">
               <span className="flex items-center gap-1.5">
-                <span className="inline-block w-5 h-px border-t border-dashed border-red-300" />
+                <span className="inline-block w-5 h-px border-t border-dashed border-status-alert" />
                 Límite máximo
               </span>
               {limits.min > 0 && (
                 <span className="flex items-center gap-1.5">
-                  <span className="inline-block w-5 h-px border-t border-dashed border-amber-300" />
+                  <span className="inline-block w-5 h-px border-t border-dashed border-status-warn" />
                   Límite mínimo
                 </span>
               )}
@@ -352,10 +355,10 @@ export default function ExpandedChart({ param, nodeId, nodeName, latestTimestamp
               />
               <Tooltip content={<CustomTooltip unit={limits.unit} />} />
               {limits.max < 9999 && (
-                <ReferenceLine y={limits.max} stroke="#fca5a5" strokeDasharray="5 5" strokeWidth={1.5} />
+                <ReferenceLine y={limits.max} stroke="#b03a2b" strokeDasharray="5 5" strokeWidth={1.5} />
               )}
               {limits.min > 0 && (
-                <ReferenceLine y={limits.min} stroke="#fcd34d" strokeDasharray="5 5" strokeWidth={1.5} />
+                <ReferenceLine y={limits.min} stroke="#c8901f" strokeDasharray="5 5" strokeWidth={1.5} />
               )}
               <Area
                 type="monotone"

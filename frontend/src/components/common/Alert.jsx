@@ -2,14 +2,14 @@ export default function Alert({ message, type = "error" }) {
   if (!message) return null;
 
   const styles = {
-    error: "bg-red-50 border border-red-200 text-red-600",
-    success: "bg-emerald-50 border border-emerald-200 text-emerald-700",
-    info: "bg-buap-50 border border-buap-200 text-buap-700",
+    error: "bg-status-alert/10 border border-status-alert/40 text-status-alert",
+    success: "bg-status-ok/10 border border-status-ok/40 text-status-ok",
+    info: "bg-kanan-100 border border-kanan-200 text-kanan-700",
   };
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium animate-fade-in ${
+      className={`flex items-center gap-2 px-3 py-2.5 text-xs font-medium animate-fade-in ${
         styles[type] || styles.error
       }`}
     >

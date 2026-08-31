@@ -66,7 +66,7 @@
   html,
   body,
   #root {
-    @apply h-full bg-slate-50 font-sans text-buap-900 antialiased;
+    @apply h-full bg-slate-50 font-sans text-kanan-900 antialiased;
   }
 
   * {
@@ -82,49 +82,59 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-buap-200 rounded-full;
+    @apply bg-kanan-200 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-buap-300;
+    @apply bg-kanan-300;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl border border-slate-200 shadow-card;
+    @apply relative bg-white rounded-none border border-slate-300;
   }
 
   .card-hover {
-    @apply card transition-shadow duration-200 hover:shadow-card-md;
+    @apply card transition-colors duration-200 hover:border-kanan-400;
   }
 
   .btn-primary {
-    @apply bg-buap-700 text-white font-medium rounded-xl px-5 py-2.5 text-sm transition-all duration-150 hover:bg-buap-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2;
+    @apply bg-kanan-700 text-white font-semibold uppercase tracking-wider text-xs rounded-none px-5 py-2.5 transition-colors duration-150 hover:bg-kanan-800 active:bg-kanan-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-slate-800 font-semibold uppercase tracking-wider text-xs rounded-none border border-slate-400 px-5 py-2.5 transition-colors duration-150 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2;
   }
 
   .btn-ghost {
-    @apply text-buap-700 font-medium rounded-xl px-4 py-2 text-sm transition-colors duration-150 hover:bg-buap-50 active:bg-buap-100 flex items-center gap-1.5;
+    @apply text-kanan-700 font-semibold uppercase tracking-wider text-xs rounded-none px-4 py-2 transition-colors duration-150 hover:bg-kanan-100 active:bg-kanan-200 flex items-center gap-1.5;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-[10px] font-semibold uppercase tracking-wider border;
   }
 
   .chip-success {
-    @apply chip bg-emerald-50 text-emerald-700 border border-emerald-200;
+    @apply chip text-status-ok;
+    background: color-mix(in srgb, #4f7f5b 10%, white);
+    border-color: color-mix(in srgb, #4f7f5b 40%, transparent);
   }
 
   .chip-danger {
-    @apply chip bg-red-50 text-red-600 border border-red-200;
+    @apply chip text-status-alert;
+    background: color-mix(in srgb, #b03a2b 10%, white);
+    border-color: color-mix(in srgb, #b03a2b 40%, transparent);
   }
 
   .chip-warning {
-    @apply chip bg-amber-50 text-amber-700 border border-amber-200;
+    @apply chip text-status-warn;
+    background: color-mix(in srgb, #c8901f 10%, white);
+    border-color: color-mix(in srgb, #c8901f 40%, transparent);
   }
 
   .chip-neutral {
-    @apply chip bg-slate-100 text-slate-500 border border-slate-200;
+    @apply chip bg-slate-100 text-slate-600 border-slate-300;
   }
 
   .label-sm {
@@ -132,21 +142,20 @@
   }
 
   .input-base {
-    @apply w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-buap-900 placeholder:text-slate-400 outline-none transition-all duration-150 focus:border-buap-500 focus:bg-white focus:ring-2 focus:ring-buap-100;
+    @apply w-full h-11 px-4 bg-white border border-slate-300 rounded-none text-sm text-kanan-900 placeholder:text-slate-400 outline-none transition-colors duration-150 focus:border-kanan-600 focus:ring-1 focus:ring-kanan-600;
   }
 }
 
 /* ── Leaflet map overrides ────────────────────────── */
 .leaflet-container {
-  border-radius: 16px;
   font-family: 'DM Sans', sans-serif;
   z-index: 0;
 }
 
 .leaflet-popup-content-wrapper {
-  border-radius: 12px !important;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 24px rgba(0, 32, 96, 0.12), 0 2px 8px rgba(0, 32, 96, 0.07) !important;
+  border-radius: 0 !important;
+  border: 1px solid #94a3b8;
+  box-shadow: none !important;
   padding: 0 !important;
   overflow: hidden;
 }
@@ -160,10 +169,10 @@
 }
 
 .leaflet-control-zoom {
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
+  border: 1px solid #94a3b8 !important;
+  border-radius: 0 !important;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 32, 96, 0.07) !important;
+  box-shadow: none !important;
 }
 
 .leaflet-control-zoom a {
@@ -179,7 +188,7 @@
   font-size: 10px !important;
   color: #94a3b8 !important;
   background: rgba(255, 255, 255, 0.85) !important;
-  border-radius: 6px !important;
+  border-radius: 0 !important;
 }
 
 @layer utilities {

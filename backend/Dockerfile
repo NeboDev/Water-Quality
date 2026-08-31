@@ -1,18 +1,17 @@
-# 1. Base de Node.js estable
-FROM node:20-alpine
+FROM node:22-alpine
 
-# 2. Directorio de trabajo
 WORKDIR /app
 
-# 3. Copiar archivos de dependencias e instalarlas
-COPY package*.json ./
-RUN npm ci --only=production
+ENV CI=true
 
-# 4. Copiar el código fuente del backend
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN pnpm install --prod --frozen-lockfile
+
+RUN apk add --no-cache mosquitto mosquitto-clients
+
 COPY src ./src
 
-# Exponer el puerto del backend (definido por PORT en tu .env, normalmente 3000)
 EXPOSE 3000
 
-# 5. Comando para iniciar
 CMD ["node", "src/index.js"]
