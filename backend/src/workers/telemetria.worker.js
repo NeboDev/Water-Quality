@@ -3,6 +3,7 @@ const { connection } = require("../services/queue");
 const mongoose = require("mongoose");
 const { pool } = require("../config/postgres");
 const { getIO } = require("../services/socket");
+const { notificarAlertaTelegram } = require("../services/telegramBot");
 
 const Telemetria =
   mongoose.models.Telemetria ||
@@ -179,7 +180,7 @@ const worker = new Worker(
 
     // Verifica que el nodo este registrado y activo
     const nodoResult = await pool.query(
-      "SELECT id FROM nodos WHERE mac = $1 AND activo = TRUE",
+      "SELECT id, ubicacion FROM nodos WHERE mac = $1 AND activo = TRUE",
       [mac],
     );
 
@@ -190,7 +191,7 @@ const worker = new Worker(
       return;
     }
 
-    const nodo_id = nodoResult.rows[0].id;
+    const { id: nodo_id, ubicacion } = nodoResult.rows[0];
     const { ph, temperatura, conductividad, turbidez, tds } = payload.valores;
 
     const erroresFisicos = validarRangosFisicos(payload.valores);
@@ -239,16 +240,25 @@ const worker = new Worker(
 
       for (const anomalia of anomalias) {
         const alerta = await registrarAlerta(nodo_id, anomalia);
+
         if (alerta) {
           console.warn(
             `Alerta registrada — ${anomalia.parametro}: ${anomalia.valor_leido} (rango: ${anomalia.valor_min}-${anomalia.valor_max})`,
           );
+
           const io = getIO();
-          io.emit("alertas:nueva", {
-            nodo_id,
-            mac,
-            alerta,
-          });
+          io.emit("alertas:nueva", { nodo_id, mac, alerta });
+
+          // Try/catch propio: si Telegram falla (token mal, red caída, etc.)
+          // NO debe tumbar el job ni provocar reintentos/duplicados
+          try {
+            await notificarAlertaTelegram({ mac, ubicacion, ...alerta });
+          } catch (err) {
+            console.error(
+              "[Telegram] No se pudo notificar la alerta:",
+              err.message,
+            );
+          }
         }
       }
     }

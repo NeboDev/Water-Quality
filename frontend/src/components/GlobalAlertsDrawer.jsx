@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { NOM_127_LIMITS, PARAM_COLORS } from "../constants";
+import CardCorners from "./common/CardCorners";
 
 export default function GlobalAlertsDrawer({ alerts, nodes, onClose, onResolve, onResolveAll, canResolve }) {
   // Close on Escape
@@ -18,24 +19,24 @@ export default function GlobalAlertsDrawer({ alerts, nodes, onClose, onResolve, 
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl z-[110] flex flex-col transform transition-transform duration-300 animate-slide-in-right">
-        
+      <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white border-l border-slate-300 z-[110] flex flex-col transform transition-transform duration-300 animate-slide-in-right">
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-300">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-500">
+            <div className="w-10 h-10 bg-status-alert/10 flex items-center justify-center flex-shrink-0 text-status-alert">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 003 15h14a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" fill="currentColor" />
               </svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-buap-900 leading-tight">Alertas activas</h2>
+              <h2 className="text-base font-bold text-kanan-900 leading-tight">Alertas activas</h2>
               <p className="text-xs text-slate-400 mt-0.5">{alerts.length} sin resolver</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+            className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -64,12 +65,13 @@ export default function GlobalAlertsDrawer({ alerts, nodes, onClose, onResolve, 
                 const location = alerta.ubicacion || nodes?.find(n => n.id === alerta.nodo_id)?.ubicacion || "Nodo desconocido";
 
                 return (
-                  <div key={alerta.id} className="bg-white rounded-2xl p-4 shadow-sm border border-red-100">
+                  <div key={alerta.id} className="relative bg-white p-4 border border-status-alert/40">
+                    <CardCorners color="border-status-alert" />
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="w-2 h-2 rounded-full" style={{ background: color }} />
-                          <p className="text-sm font-bold text-buap-900 leading-none">
+                          <p className="text-sm font-bold text-kanan-900 leading-none">
                             {limits?.label || alerta.parametro}
                           </p>
                         </div>
@@ -85,7 +87,7 @@ export default function GlobalAlertsDrawer({ alerts, nodes, onClose, onResolve, 
                     <div className="flex items-end justify-between mb-4">
                       <div>
                         <p className="text-[10px] text-slate-400 mb-0.5">Lectura anómala</p>
-                        <p className="font-mono text-xl font-bold text-red-500 leading-none">
+                        <p className="font-mono text-xl font-bold text-status-alert leading-none">
                           {alerta.valor_leido}
                           <span className="text-xs font-normal text-slate-400 ml-1">{limits?.unit || ""}</span>
                         </p>
@@ -98,15 +100,15 @@ export default function GlobalAlertsDrawer({ alerts, nodes, onClose, onResolve, 
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                      <span className="text-[10px] font-semibold text-red-500 bg-red-50 px-2 py-1 rounded-md">
+                    <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+                      <span className="text-[10px] font-semibold text-status-alert bg-status-alert/10 px-2 py-1">
                         {diff} {limits?.unit}
                       </span>
-                      
+
                       {canResolve && (
                         <button
                           onClick={() => onResolve(alerta.id)}
-                          className="text-xs font-semibold text-buap-600 hover:text-buap-800 transition-colors"
+                          className="text-xs font-semibold text-kanan-600 hover:text-kanan-800 transition-colors"
                         >
                           Marcar resuelta
                         </button>
@@ -121,10 +123,10 @@ export default function GlobalAlertsDrawer({ alerts, nodes, onClose, onResolve, 
 
         {/* Footer */}
         {alerts.length > 0 && canResolve && (
-          <div className="p-4 border-t border-slate-100 bg-white">
+          <div className="p-4 border-t border-slate-300 bg-white">
             <button
               onClick={onResolveAll}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-buap-50 text-buap-700 hover:bg-buap-100 font-semibold rounded-xl transition-colors text-sm"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-kanan-100 text-kanan-700 hover:bg-kanan-200 font-semibold uppercase tracking-wider transition-colors text-sm"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M4 9l3 3 7.5-7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

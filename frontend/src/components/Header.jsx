@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import kananLogo from "../assets/images/kanan_logo.png";
+import CardCorners from "./common/CardCorners";
 
 const STATUS = {
-  activo: { label: "Activo", dot: "#1a8a55" },
-  alerta: { label: "Alerta", dot: "#ef4444" },
-  inactivo: { label: "Sin señal", dot: "#94a3b8" },
+  activo: { label: "Activo", dot: "#4f7f5b" },
+  alerta: { label: "Alerta", dot: "#b03a2b" },
+  inactivo: { label: "Sin señal", dot: "#9a9a9c" },
 };
 
 const STATUS_CHIP = {
@@ -13,7 +15,7 @@ const STATUS_CHIP = {
 };
 
 const ROLE_BADGE = {
-  admin: "bg-buap-100 text-buap-700",
+  admin: "bg-kanan-100 text-kanan-700",
   icuap: "bg-violet-100 text-violet-700",
   operador: "bg-amber-100 text-amber-700",
   visualizador: "bg-slate-200 text-slate-500",
@@ -22,7 +24,6 @@ const ROLE_LABEL = {
   admin: "Admin", icuap: "ICUAP", operador: "Operador", visualizador: "Visualizador",
 };
 
-// ── Hook reutilizable para cerrar menú al click externo ──
 function useClickOutside(ref, onClose) {
   useEffect(() => {
     const handler = (e) => {
@@ -41,20 +42,22 @@ export default function Header({
   canAddUser, onAddUser,
   canConfigNodes, onConfigNodes,
   canViewReports,
-  globalAlerts, setShowGlobalAlerts,
+  globalAlerts, onOpenAlerts,
+  socketConnected,
 }) {
-  const lastUpdate = selectedNode
-    ? new Date(selectedNode.timestamp).toLocaleTimeString("es-MX")
-    : "—";
+  const alertsCount = globalAlerts?.length || 0;
 
   const [nodeMenuOpen, setNodeMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const nodeRef = useRef(null);
   const userRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   useClickOutside(nodeRef, () => setNodeMenuOpen(false));
   useClickOutside(userRef, () => setUserMenuOpen(false));
+  useClickOutside(mobileMenuRef, () => setMobileMenuOpen(false));
 
   const selectNode = (node) => {
     onSelectNode(node);
@@ -67,31 +70,28 @@ export default function Header({
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center px-6 gap-4 flex-shrink-0 z-20">
+    <header className="h-16 bg-white border-b border-slate-300 flex items-center px-3 sm:px-6 gap-2 sm:gap-4 flex-shrink-0 z-20">
 
       {/* ── Logo ── */}
       <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-8 h-8 bg-buap-900 rounded-xl flex items-center justify-center">
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-            <path d="M16 2C11 10 5 13 5 21a11 11 0 0022 0c0-8-6-11-11-19z" fill="white" />
-            <circle cx="16" cy="21" r="2.5" fill="rgba(255,255,255,0.4)" />
-          </svg>
+        <div className="w-8 h-8 flex items-center justify-center">
+          <img src={kananLogo} alt="Kanan" className="w-full h-full object-contain" />
         </div>
         <div>
-          <p className="text-sm font-bold text-buap-900 leading-none tracking-tight">Kanan</p>
-          <p className="text-[10px] text-slate-400 leading-none mt-0.5">NOM-127-SSA1-2021</p>
+          <p className="text-sm font-bold text-kanan-900 leading-none tracking-tight">Kanan</p>
+          <p className="text-[10px] text-slate-400 leading-none mt-0.5 hidden sm:block">Sistema de Monitoreo IoT</p>
         </div>
       </div>
 
-      <div className="w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
+      <div className="hidden sm:block w-px h-7 bg-slate-300 mx-1 flex-shrink-0" />
 
       {/* ── Node dropdown ── */}
       <div className="relative flex-1 min-w-0" ref={nodeRef}>
-        {view === "dashboard" && (
+        {view === "nodos" && (
           <>
             <button
               onClick={() => setNodeMenuOpen((v) => !v)}
-              className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all duration-150 max-w-xs ${nodeMenuOpen ? "bg-buap-50 ring-2 ring-buap-200" : "bg-slate-100 hover:bg-slate-200"
+              className={`flex items-center gap-2 px-2.5 py-1.5 transition-colors duration-150 w-full min-w-0 max-w-[120px] sm:max-w-xs overflow-hidden ${nodeMenuOpen ? "bg-kanan-100 ring-1 ring-kanan-300" : "bg-slate-100 hover:bg-slate-200"
                 }`}
             >
               {/* Status dot */}
@@ -103,7 +103,7 @@ export default function Header({
               )}
               <div className="flex flex-col leading-none text-left min-w-0">
                 <span className="text-[9px] text-slate-400 font-medium">Nodo activo</span>
-                <span className="text-sm font-semibold text-buap-900 truncate">
+                <span className="text-sm font-semibold text-kanan-900 truncate">
                   {selectedNode ? (selectedNode.ubicacion || selectedNode.node_id) : "Seleccionar…"}
                 </span>
               </div>
@@ -117,7 +117,8 @@ export default function Header({
 
             {/* Node dropdown panel */}
             {nodeMenuOpen && (
-              <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-fade-in">
+              <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-slate-300 overflow-hidden z-50 animate-fade-in">
+                <CardCorners />
                 <div className="px-3 pt-3 pb-1">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 px-1 mb-1">
                     {nodes.length} nodo{nodes.length !== 1 ? "s" : ""} registrados
@@ -132,10 +133,10 @@ export default function Header({
                       <button
                         key={node.id}
                         onClick={() => selectNode(node)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${isSel ? "bg-buap-50 ring-1 ring-inset ring-buap-200" : "hover:bg-slate-50"
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 ${isSel ? "bg-kanan-100 ring-1 ring-inset ring-kanan-300" : "hover:bg-slate-50"
                           }`}
                       >
-                        {/* Status indicator */}
+                        {/* indicador de estado del nodo */}
                         <div className="flex-shrink-0 flex flex-col items-center gap-1">
                           <span
                             className={`w-2.5 h-2.5 rounded-full ${node.status === "activo" ? "animate-pulse-dot" : ""}`}
@@ -146,11 +147,11 @@ export default function Header({
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className={`text-xs font-semibold truncate ${isSel ? "text-buap-800" : "text-slate-800"}`}>
+                            <p className={`text-xs font-semibold truncate ${isSel ? "text-kanan-800" : "text-slate-800"}`}>
                               {node.node_id}
                             </p>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${node.status === "activo" ? "bg-emerald-100 text-emerald-700" :
-                              node.status === "alerta" ? "bg-red-100 text-red-600" :
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 flex-shrink-0 ${node.status === "activo" ? "bg-status-ok/10 text-status-ok" :
+                              node.status === "alerta" ? "bg-status-alert/10 text-status-alert" :
                                 "bg-slate-100 text-slate-400"
                               }`}>
                               {st.label}
@@ -158,7 +159,7 @@ export default function Header({
                           </div>
                           <p className="text-[10px] text-slate-400 truncate mt-0.5">{node.ubicacion}</p>
                           {node.valores && (
-                            <p className="text-[10px] font-mono text-buap-600 mt-0.5">
+                            <p className="text-[10px] font-mono text-kanan-600 mt-0.5">
                               pH {node.valores.ph} · {node.valores.temperatura}°C
                             </p>
                           )}
@@ -166,7 +167,7 @@ export default function Header({
 
                         {/* Checkmark if selected */}
                         {isSel && (
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-buap-600">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-kanan-600">
                             <path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
@@ -175,65 +176,52 @@ export default function Header({
                   })}
                 </div>
 
-                {/* Footer: configurar + registrar */}
-                <div className="border-t border-slate-100 px-2 py-2 flex flex-col gap-1">
 
-                  {/* Configuración de nodos */}
-                  <button
-                    disabled={!canConfigNodes}
-                    onClick={() => { if (canConfigNodes) { setNodeMenuOpen(false); onConfigNodes(); } }}
-                    title={!canConfigNodes ? "Solo el Administrador puede configurar nodos" : undefined}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canConfigNodes ? "hover:bg-slate-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                      }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canConfigNodes ? "bg-slate-100" : "bg-slate-100"}`}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <circle cx="7" cy="7" r="2" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.3" />
-                        <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.1 3.1l.7.7M10.2 10.2l.7.7M10.2 3.8l-.7.7M3.8 10.2l-.7.7" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.1" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                        Configuración de nodos
-                        {!canConfigNodes && (
-                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                            <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                            <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+                {(canConfigNodes || canAddNode) && (
+                  <div className="border-t border-slate-300 px-2 py-2 flex flex-col gap-1">
+                    {/* conexion al endpoint de configuracion de nodos */}
+                    {canConfigNodes && (
+                      <button
+                        onClick={() => { setNodeMenuOpen(false); onConfigNodes(); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 hover:bg-slate-50 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 bg-slate-100">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <circle cx="7" cy="7" r="2" stroke="#475569" strokeWidth="1.3" />
+                            <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.1 3.1l.7.7M10.2 10.2l.7.7M10.2 3.8l-.7.7M3.8 10.2l-.7.7" stroke="#475569" strokeWidth="1.1" strokeLinecap="round" />
                           </svg>
-                        )}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Editar, activar o eliminar nodos</p>
-                    </div>
-                  </button>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">
+                            Configuración de nodos
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Editar, activar o eliminar nodos</p>
+                        </div>
+                      </button>
+                    )}
 
-                  {/* Registrar nuevo nodo */}
-                  <button
-                    disabled={!canAddNode}
-                    onClick={() => { if (canAddNode) { setNodeMenuOpen(false); onAddNode(); } }}
-                    title={!canAddNode ? "Solo el Administrador puede registrar nodos" : undefined}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canAddNode ? "hover:bg-buap-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                      }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canAddNode ? "bg-buap-100" : "bg-slate-100"}`}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <rect x="2" y="2" width="10" height="10" rx="2" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" />
-                        <path d="M7 5v4M5 7h4" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                        Registrar nuevo nodo
-                        {!canAddNode && (
-                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                            <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                            <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+                    {/* add node */}
+                    {canAddNode && (
+                      <button
+                        onClick={() => { setNodeMenuOpen(false); onAddNode(); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 hover:bg-kanan-100 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 bg-kanan-100">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <rect x="2" y="2" width="10" height="10" rx="2" stroke="#2333ce" strokeWidth="1.3" />
+                            <path d="M7 5v4M5 7h4" stroke="#2333ce" strokeWidth="1.3" strokeLinecap="round" />
                           </svg>
-                        )}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Agregar sensor IoT al sistema</p>
-                    </div>
-                  </button>
-                </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">
+                            Registrar nuevo nodo
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Agregar sensor IoT al sistema</p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -242,9 +230,9 @@ export default function Header({
 
 
 
-      {/* ── View toggle ── */}
-      <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-0.5 flex-shrink-0">
-        {[
+      {/* toggle para pantallas pequenias*/}
+      {(() => {
+        const viewOptions = [
           {
             id: "overview", title: "Vista general",
             icon: (
@@ -256,7 +244,7 @@ export default function Header({
             ),
           },
           {
-            id: "dashboard", title: "Métricas por nodo",
+            id: "nodos", title: "Nodos",
             icon: (
               <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
                 <rect x="1" y="1" width="5.5" height="5.5" rx="1.5" />
@@ -276,7 +264,7 @@ export default function Header({
               </svg>
             ),
           },
-          // Reportes — solo visible para admin / icuap
+          // Reportes: solo visible para admin / icuap
           ...(canViewReports ? [{
             id: "reportes", title: "Reportes",
             icon: (
@@ -288,63 +276,144 @@ export default function Header({
               </svg>
             ),
           }] : []),
-        ].map((v) => (
-          <button
-            key={v.id}
-            onClick={() => onViewChange(v.id)}
-            title={v.title}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
-              view === v.id ? "bg-white text-buap-700 shadow-card" : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {v.icon}
-            <span className="hidden sm:inline">{v.title}</span>
-          </button>
-        ))}
+        ];
+
+        return (
+          <>
+            {/* Desktop View toggle */}
+            <div className="hidden md:flex items-center border border-slate-300 flex-shrink-0">
+              {viewOptions.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => onViewChange(v.id)}
+                  title={v.title}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors duration-150 ${view === v.id ? "bg-kanan-700 text-white" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                >
+                  {v.icon}
+                  <span className="hidden sm:inline">{v.title}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile View*/}
+            <div className="relative md:hidden flex-shrink-0" ref={mobileMenuRef}>
+              <button
+                onClick={() => setMobileMenuOpen((v) => !v)}
+                className={`p-2 transition-colors duration-150 select-none ${mobileMenuOpen ? "bg-kanan-100 ring-1 ring-kanan-300 text-kanan-700" : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                  }`}
+                title="Menú de vistas"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  {mobileMenuOpen ? (
+                    <path d="M4.5 4.5l11 11M15.5 4.5l-11 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  ) : (
+                    <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  )}
+                </svg>
+              </button>
+
+              {/* Mobile menu dropdown */}
+              {mobileMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-300 overflow-hidden z-50 animate-fade-in">
+                  <CardCorners />
+                  <div className="px-3 pt-3 pb-1">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 px-2 mb-1.5">Cambiar vista</p>
+                  </div>
+                  <div className="px-2 pb-2 flex flex-col gap-1">
+                    {viewOptions.map((v) => {
+                      const isSel = view === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => {
+                            onViewChange(v.id);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 ${isSel ? "bg-kanan-100 text-kanan-700 ring-1 ring-inset ring-kanan-300 font-semibold" : "hover:bg-slate-50 text-slate-600 hover:text-slate-800"
+                            }`}
+                        >
+                          <span className={isSel ? "text-kanan-600" : "text-slate-400"}>
+                            {v.icon}
+                          </span>
+                          <span className="text-xs">{v.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
+
+      <div className="hidden sm:block w-px h-7 bg-slate-300 mx-1 flex-shrink-0" />
+
+      {/* indicador de conexion en tiempo real */}
+      <div
+        className={`hidden md:inline-flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider border flex-shrink-0 transition-colors ${
+          socketConnected
+            ? "bg-status-ok/10 border-status-ok/40 text-status-ok"
+            : "bg-status-warn/10 border-status-warn/60 text-status-warn"
+        }`}
+        title={socketConnected ? "Conexión en tiempo real activa" : "Intentando reconectar con el servidor…"}
+      >
+        <span
+          className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${socketConnected ? "animate-pulse-dot" : "animate-pulse"}`}
+          style={{ background: socketConnected ? "#4f7f5b" : "#c8901f" }}
+        />
+        {socketConnected ? "Conectado en tiempo real" : "Reconectando…"}
       </div>
 
-      <div className="w-px h-7 bg-slate-200 mx-1 flex-shrink-0" />
-
-      {/* ── Global Alerts Bell ── */}
+      {/* campana de alertas */}
       <button
-        onClick={() => setShowGlobalAlerts(true)}
-        className="relative p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
-        title="Ver alertas"
+        onClick={() => onOpenAlerts?.(null)}
+        className="relative flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0 border border-slate-300"
+        title="Ver todas las alertas"
       >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M10 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 003 15h14a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" fill="currentColor" />
-        </svg>
-        {globalAlerts?.length > 0 && (
-          <span className="absolute top-1.5 right-1.5 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+        <div className="relative flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="text-slate-500">
+            <path d="M10 2a6 6 0 00-6 6v3.586l-1.707 1.707A1 1 0 003 15h14a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a2 2 0 01-2-2h4a2 2 0 01-2 2z" fill="currentColor" />
+          </svg>
+          {alertsCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-alert opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-status-alert"></span>
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-bold text-slate-600 hidden sm:inline">Alertas</span>
+        {alertsCount > 0 && (
+          <span className="bg-status-alert/10 text-status-alert border border-status-alert/40 text-[9px] font-extrabold px-1.5 py-0.5 leading-none flex items-center justify-center min-w-[16px] h-4">
+            {alertsCount}
           </span>
         )}
       </button>
 
-      {/* ── User menu ── */}
+      {/* menu del usuario*/}
       {user && (
         <div className="relative flex-shrink-0" ref={userRef}>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-150 select-none ${userMenuOpen ? "bg-buap-50 ring-2 ring-buap-200" : "bg-slate-100 hover:bg-slate-200"
+            className={`flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 transition-colors duration-150 select-none ${userMenuOpen ? "bg-kanan-100 ring-1 ring-kanan-300" : "bg-slate-100 hover:bg-slate-200"
               }`}
           >
-            <div className="w-6 h-6 rounded-full bg-buap-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-6 h-6 bg-kanan-100 flex items-center justify-center flex-shrink-0">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                 <circle cx="6.5" cy="4.5" r="2.2" stroke="#2333ce" strokeWidth="1.2" />
                 <path d="M1.5 11.5c0-2.2 2.24-3.5 5-3.5s5 1.3 5 3.5" stroke="#2333ce" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
             </div>
-            <div className="flex flex-col leading-none gap-0.5 text-left">
-              <span className="text-xs font-semibold text-buap-800">{user.nombre}</span>
-              <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full w-fit ${ROLE_BADGE[user.rol] ?? "bg-slate-200 text-slate-500"}`}>
+            <div className="hidden sm:flex flex-col leading-none gap-0.5 text-left">
+              <span className="text-xs font-semibold text-kanan-800">{user.nombre}</span>
+              <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 w-fit ${ROLE_BADGE[user.rol] ?? "bg-slate-200 text-slate-500"}`}>
                 {ROLE_LABEL[user.rol] ?? user.rol}
               </span>
             </div>
             <svg
               width="12" height="12" viewBox="0 0 12 12" fill="none"
-              className={`text-slate-400 transition-transform duration-200 flex-shrink-0 ${userMenuOpen ? "rotate-180" : ""}`}
+              className={`text-slate-400 transition-transform duration-200 flex-shrink-0 hidden sm:block ${userMenuOpen ? "rotate-180" : ""}`}
             >
               <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -352,117 +421,57 @@ export default function Header({
 
           {/* User dropdown */}
           {userMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-fade-in">
+            <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-300 overflow-hidden z-50 animate-fade-in">
+              <CardCorners />
 
               {/* Info usuario */}
-              <div className="px-4 pt-4 pb-3 border-b border-slate-100">
-                <p className="text-xs font-bold text-buap-900 truncate">{user.nombre}</p>
+              <div className="px-4 pt-4 pb-3 border-b border-slate-300">
+                <p className="text-xs font-bold text-kanan-900 truncate">{user.nombre}</p>
                 <p className="text-[11px] text-slate-400 truncate mt-0.5">{user.email ?? ""}</p>
               </div>
 
               {/* Acciones */}
-              <div className="px-2 py-2 flex flex-col gap-1">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 px-2 mb-1.5">Administración</p>
+              {(canAddUser || canConfigNodes || canAddNode) && (
+                <div className="px-2 py-2 flex flex-col gap-1">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 px-2 mb-1.5">Administración</p>
 
-                {/* Nuevo usuario */}
-                <button
-                  disabled={!canAddUser}
-                  onClick={() => canAddUser && handleUserAction(onAddUser)}
-                  title={!canAddUser ? "Solo el Administrador puede crear usuarios" : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canAddUser ? "hover:bg-buap-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                    }`}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canAddUser ? "bg-violet-100" : "bg-slate-100"}`}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="5.5" cy="4.5" r="2" stroke={canAddUser ? "#7c3aed" : "#94a3b8"} strokeWidth="1.3" />
-                      <path d="M1.5 11.5c0-2 1.8-3.5 4-3.5" stroke={canAddUser ? "#7c3aed" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                      <path d="M10 8v4M8 10h4" stroke={canAddUser ? "#7c3aed" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                      Nuevo usuario
-                      {!canAddUser && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                          <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
+                  {/* Nuevo usuario */}
+                  {canAddUser && (
+                    <button
+                      onClick={() => handleUserAction(onAddUser)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-150 hover:bg-kanan-100 cursor-pointer"
+                    >
+                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 bg-violet-100">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <circle cx="5.5" cy="4.5" r="2" stroke="#7c3aed" strokeWidth="1.3" />
+                          <path d="M1.5 11.5c0-2 1.8-3.5 4-3.5" stroke="#7c3aed" strokeWidth="1.3" strokeLinecap="round" />
+                          <path d="M10 8v4M8 10h4" stroke="#7c3aed" strokeWidth="1.3" strokeLinecap="round" />
                         </svg>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Crear cuenta y asignar rol</p>
-                  </div>
-                </button>
-
-                {/* Configuración de nodos */}
-                <button
-                  disabled={!canConfigNodes}
-                  onClick={() => canConfigNodes && handleUserAction(onConfigNodes)}
-                  title={!canConfigNodes ? "Solo el Administrador puede configurar nodos" : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canConfigNodes ? "hover:bg-slate-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                    }`}
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="2" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.3" />
-                      <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.1 3.1l.7.7M10.2 10.2l.7.7M10.2 3.8l-.7.7M3.8 10.2l-.7.7" stroke={canConfigNodes ? "#475569" : "#94a3b8"} strokeWidth="1.1" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                      Configuración de nodos
-                      {!canConfigNodes && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                          <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
-                        </svg>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Editar, activar o eliminar nodos</p>
-                  </div>
-                </button>
-
-                {/* Registrar nuevo nodo */}
-                <button
-                  disabled={!canAddNode}
-                  onClick={() => canAddNode && handleUserAction(onAddNode)}
-                  title={!canAddNode ? "Solo el Administrador puede registrar nodos" : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 ${canAddNode ? "hover:bg-buap-50 cursor-pointer" : "opacity-40 cursor-not-allowed"
-                    }`}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${canAddNode ? "bg-buap-100" : "bg-slate-100"}`}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <rect x="2" y="2" width="10" height="10" rx="2" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" />
-                      <path d="M7 5v4M5 7h4" stroke={canAddNode ? "#2333ce" : "#94a3b8"} strokeWidth="1.3" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                      Registrar nuevo nodo
-                      {!canAddNode && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#94a3b8" strokeWidth="1" />
-                          <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
-                        </svg>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Agregar sensor IoT al sistema</p>
-                  </div>
-                </button>
-              </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-800">
+                          Nuevo usuario
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Crear cuenta y asignar rol</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Cerrar sesión */}
-              <div className="px-2 pb-2 border-t border-slate-100 pt-2">
+              <div className="px-2 pb-2 border-t border-slate-300 pt-2">
                 <button
                   onClick={() => { setUserMenuOpen(false); setShowLogoutConfirm(true); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-all duration-150 group"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-status-alert/10 transition-colors duration-150 group"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 group-hover:bg-red-100">
+                  <div className="w-8 h-8 bg-status-alert/10 flex items-center justify-center flex-shrink-0 group-hover:bg-status-alert/20">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                       <path d="M5 2H3a1 1 0 00-1 1v8a1 1 0 001 1h2M9.5 9.5l3-2.5-3-2.5M12.5 7H5"
-                        stroke="#ef4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                        stroke="#b03a2b" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <p className="text-xs font-semibold text-red-500">Cerrar sesión</p>
+                  <p className="text-xs font-semibold text-status-alert">Cerrar sesión</p>
                 </button>
               </div>
             </div>
@@ -476,8 +485,9 @@ export default function Header({
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in"
           onClick={(e) => { if (e.target === e.currentTarget) setShowLogoutConfirm(false); }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs mx-4 transform transition-all">
-            <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4 mx-auto">
+          <div className="relative bg-white border border-slate-300 p-6 w-full max-w-xs mx-4 transform transition-all">
+            <CardCorners color="border-status-alert" />
+            <div className="w-14 h-14 bg-status-alert/10 text-status-alert flex items-center justify-center mb-4 mx-auto">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <path d="M10 4H6a2 2 0 00-2 2v12a2 2 0 002 2h4M15 16l4-4-4-4M19 12H9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -495,7 +505,7 @@ export default function Header({
               </button>
               <button
                 onClick={() => { setShowLogoutConfirm(false); onLogout(); }}
-                className="flex-1 flex items-center justify-center px-4 py-2.5 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-all shadow-md shadow-red-600/20"
+                className="flex-1 flex items-center justify-center px-4 py-2.5 bg-status-alert text-white text-xs font-semibold uppercase tracking-wider hover:bg-status-alert/90 transition-colors"
               >
                 Salir
               </button>

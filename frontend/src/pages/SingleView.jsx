@@ -1,13 +1,18 @@
 import ParameterCard from "../components/ParameterCard";
-import { PARAMS } from "../constants";
 
 export default function SingleView({
   loadingTelemetry,
   nodeReady,
   selectedNode,
   setExpandedParam,
-  loadTelemetry
+  loadTelemetry,
+  activeParams = [],
+  globalAlerts = [],
+  onOpenAlerts,
+  onRegisterSample
 }) {
+  const nodeAlertsCount = globalAlerts?.filter(a => a.nodo_id === selectedNode?.id).length || 0;
+
   return (
     <>
       {/* sin nodo seleccionado */}
@@ -26,7 +31,7 @@ export default function SingleView({
       {loadingTelemetry && !nodeReady && (
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-9 h-9 rounded-full border-2 border-buap-200 border-t-buap-700 animate-spin-slow" />
+            <div className="w-9 h-9 rounded-full border-2 border-kanan-200 border-t-kanan-700 animate-spin-slow" />
             <p className="text-xs text-slate-400">Cargando telemetría…</p>
           </div>
         </div>
@@ -34,9 +39,9 @@ export default function SingleView({
 
       {/* estado sin datos o error en la carga */}
       {!loadingTelemetry && selectedNode?.sinDatos && (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center animate-fade-in">
           <div className="flex flex-col items-center gap-4 max-w-xs text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-slate-100 flex items-center justify-center">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <rect x="4" y="8" width="24" height="18" rx="3" stroke="#94a3b8" strokeWidth="1.5" />
                 <path d="M10 14h12M10 19h7" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
@@ -56,7 +61,7 @@ export default function SingleView({
             </div>
             <button
               onClick={() => loadTelemetry(selectedNode)}
-              className="btn-ghost text-xs border border-slate-200"
+              className="btn-ghost text-xs border border-slate-300"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                 <path d="M2 6.5a4.5 4.5 0 014.5-4.5A4.5 4.5 0 0111 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -69,29 +74,30 @@ export default function SingleView({
       )}
 
       {nodeReady && (
-        <div className="flex-1 flex flex-col w-full max-w-[1600px] mx-auto overflow-y-auto custom-scrollbar pr-2 pb-4">
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 auto-rows-[minmax(0,1fr)]">
-            {PARAMS.filter(p => p !== 'conductividad').map((p) => (
-              <ParameterCard
-                key={p}
-                param={p}
-                history={selectedNode.history[p]}
-                currentValue={selectedNode.valores[p]}
-                onExpand={() => setExpandedParam(p)}
-                disabled={selectedNode.status === "inactivo"}
-              />
-            ))}
-
-            <div className="lg:col-span-2 xl:col-span-2 h-full">
-              <ParameterCard
-                param="conductividad"
-                history={selectedNode.history.conductividad}
-                currentValue={selectedNode.valores.conductividad}
-                onExpand={() => setExpandedParam("conductividad")}
-                disabled={selectedNode.status === "inactivo"}
-              />
-            </div>
+        <div className={`flex-1 flex flex-col w-full pr-2 pb-4 relative lg:h-full lg:min-h-0 min-h-0 ${
+          activeParams.length <= 4
+            ? "lg:overflow-hidden"
+            : "overflow-y-auto custom-scrollbar"
+        }`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-fade-in h-full auto-rows-[240px] lg:auto-rows-[calc((100%-1.25rem)/2)]">
+            {activeParams.map((p) => {
+              return (
+                <div key={p} className="h-full">
+                  <ParameterCard
+                    param={p}
+                    history={selectedNode.history[p]}
+                    currentValue={selectedNode.valores[p]}
+                    onExpand={() => setExpandedParam(p)}
+                    disabled={selectedNode.status === "inactivo"}
+                    umbrales={selectedNode.umbrales}
+                    nodeId={selectedNode.id}
+                    onRegisterSample={onRegisterSample}
+                  />
+                </div>
+              );
+            })}
           </div>
+
         </div>
       )}
     </>

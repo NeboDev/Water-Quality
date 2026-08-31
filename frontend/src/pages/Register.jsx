@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { validateField } from "../utils/validations";
+import api from "../api";
+import WaterRippleGL from "../components/WaterRippleGL";
+import BlueprintCard from "../components/landing/BlueprintCard";
+import kananLogo from "../assets/images/kanan_logo.png";
 
 export default function Register({ onRegister, onGoLogin }) {
-  const [form, setForm] = useState({ nombreUsuario: "", email: "", password: "", rol: "visualizador" });
-  const [fieldErrors, setFieldErrors] = useState({ nombreUsuario: "", email: "", password: "" });
+  const [form, setForm] = useState({ nombreUsuario: "", email: "", password: "", confirmPassword: "", rol: "visualizador" });
+  const [fieldErrors, setFieldErrors] = useState({ nombreUsuario: "", email: "", password: "", confirmPassword: "" });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -11,15 +15,33 @@ export default function Register({ onRegister, onGoLogin }) {
   const [success, setSuccess] = useState(false);
   const [userData, setUserData] = useState(null);
 
+  const rippleRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleChange = (field) => (e) => {
     const value = e.target.value;
-    setForm((f) => ({ ...f, [field]: value }));
+    const updatedForm = { ...form, [field]: value };
+    setForm(updatedForm);
     setError("");
+
+    const fieldErr = validateField(field, value);
+    let confirmErr = "";
+    if (field === "confirmPassword") {
+      confirmErr = value !== form.password ? "Las contraseñas no coinciden." : "";
+    } else if (field === "password" && form.confirmPassword) {
+      confirmErr = form.confirmPassword !== value ? "Las contraseñas no coinciden." : "";
+    }
 
     setFieldErrors((prev) => ({
       ...prev,
-      [field]: validateField(field, value),
+      [field]: fieldErr,
+      confirmPassword: field === "password" && form.confirmPassword ? confirmErr : (field === "confirmPassword" ? confirmErr : prev.confirmPassword),
     }));
   };
 
@@ -30,12 +52,14 @@ export default function Register({ onRegister, onGoLogin }) {
     const nErr = validateField("nombreUsuario", form.nombreUsuario);
     const eErr = validateField("email", form.email);
     const pErr = validateField("password", form.password);
+    const cpErr = form.password !== form.confirmPassword ? "Las contraseñas no coinciden." : "";
 
-    if (nErr || eErr || pErr || !form.nombreUsuario.trim() || !form.email.trim() || !form.password.trim()) {
+    if (nErr || eErr || pErr || cpErr || !form.nombreUsuario.trim() || !form.email.trim() || !form.password.trim() || !form.confirmPassword.trim()) {
       setFieldErrors({
         nombreUsuario: nErr || (!form.nombreUsuario.trim() ? "Requerido" : ""),
         email: eErr || (!form.email.trim() ? "Requerido" : ""),
         password: pErr || (!form.password.trim() ? "Requerido" : ""),
+        confirmPassword: cpErr || (!form.confirmPassword.trim() ? "Requerido" : ""),
       });
       setError("Por favor, corrige los errores antes de continuar.");
       return;
@@ -45,24 +69,14 @@ export default function Register({ onRegister, onGoLogin }) {
     setError("");
 
     try {
-      const res = await fetch("/api/v1/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre: form.nombreUsuario.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          rol: form.rol,
-        }),
+      const res = await api.post("/auth/register", {
+        nombre: form.nombreUsuario.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        rol: form.rol,
       });
 
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.mensaje || "No se pudo completar el registro.");
-      }
-
-      setUserData(data.usuario);
+      setUserData(res.data.usuario);
       setSuccess(true);
 
     } catch (err) {
@@ -72,89 +86,68 @@ export default function Register({ onRegister, onGoLogin }) {
     }
   };
 
-  const hasErrors = fieldErrors.nombreUsuario || fieldErrors.email || fieldErrors.password;
-  const canSubmit = form.nombreUsuario.trim() && form.email.trim() && form.password.trim() && !hasErrors && !loading;
+  const hasErrors = fieldErrors.nombreUsuario || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword;
+  const canSubmit = form.nombreUsuario.trim() && form.email.trim() && form.password.trim() && form.confirmPassword.trim() && !hasErrors && !loading;
 
   return (
-    <div className="min-h-screen flex">
-      {/* ── Left panel ── */}
-      <div className="hidden lg:flex w-[420px] flex-shrink-0 bg-buap-900 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-white/[0.03]" />
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-white/[0.03]" />
+    <div
+      className="min-h-screen w-full relative overflow-hidden flex flex-col md:flex-row bg-slate-50 select-none"
+      onMouseMove={(e) => rippleRef.current?.addRipple(e.clientX, e.clientY)}
+      onTouchMove={(e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        rippleRef.current?.addRipple(t.clientX, t.clientY);
+      }}
+      style={{ touchAction: "none" }}
+    >
+      {/* WebGL water background */}
+      {!isMobile && (
+        <div className="absolute inset-0 pointer-events-none">
+          <WaterRippleGL ref={rippleRef} className="w-full h-full" />
+        </div>
+      )}
 
-        <div className="relative z-10 flex flex-col gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 2C11 10 5 13 5 21a11 11 0 0022 0c0-8-6-11-11-19z" fill="rgba(255,255,255,0.9)" />
-              <circle cx="16" cy="21" r="4" fill="rgba(255,255,255,0.2)" />
-              <circle cx="16" cy="21" r="2" fill="rgba(255,255,255,0.6)" />
-            </svg>
+      {/* Panel Izquierdo: Branding */}
+      <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center md:justify-end p-8 md:pr-12 lg:pr-24 animate-fade-in">
+        <div className="flex flex-row items-center justify-center md:justify-start gap-4 md:gap-6 lg:gap-8 w-full max-w-md lg:max-w-lg">
+          <div className="flex-shrink-0 w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex items-center justify-center">
+            <img
+              src={kananLogo}
+              alt="Kanan"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Kanan</h1>
-            <p className="text-sm text-white/55 mt-1 leading-relaxed">
-              Sistema de monitoreo de calidad del agua
+          <div className="flex flex-col text-left">
+            <h1 className="uppercase font-semibold leading-[1.04] tracking-wide text-[40px] md:text-[56px] lg:text-[64px] text-black mb-1 md:mb-2">
+              Kanan
+            </h1>
+            <p className="text-base md:text-lg text-black/80 leading-relaxed">
+              Sistema de Monitoreo IoT de <br />la calidad del agua
             </p>
           </div>
         </div>
-
-        {/* Info box */}
-        <div className="relative z-10 bg-white/[0.06] border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-          <p className="text-sm font-semibold text-white/80">¿Qué rol debo elegir?</p>
-          {[
-            { rol: "Administrador", desc: "Gestión completa del sistema, usuarios y configuración de nodos." },
-            { rol: "Investigador", desc: "Acceso a datos históricos, reportes y análisis de tendencias." },
-            { rol: "Técnico", desc: "Monitoreo en tiempo real y atención de alertas operativas." },
-          ].map((r) => (
-            <div key={r.rol} className="flex gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-buap-300 mt-1.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-white/70">{r.rol}</p>
-                <p className="text-xs text-white/40 leading-relaxed mt-0.5">{r.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="relative z-10">
-          <p className="text-xs text-white/30 leading-relaxed">
-            Benemérita Universidad Autónoma de Puebla<br />
-            Instituto de Ciencias · Facultad de Ciencias de la Computación
-          </p>
-        </div>
       </div>
 
-      {/* ── Right panel ── */}
-      <div className="flex-1 flex items-center justify-center bg-slate-50 px-6 py-10">
-        <div className="w-full max-w-sm animate-fade-in">
-
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-buap-900 flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                <path d="M16 2C11 10 5 13 5 21a11 11 0 0022 0c0-8-6-11-11-19z" fill="white" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-buap-900">Kanan</span>
-          </div>
-
-          <div className="card p-8 shadow-card-lg">
+      {/* Panel Derecho: Formulario de Registro */}
+      <div className="relative z-10 w-full md:w-1/2 flex flex-col items-center justify-center p-4 py-8 animate-fade-in">
+        <div className="w-full max-w-sm">
+          <BlueprintCard className="bg-white/90 backdrop-blur-sm p-8">
 
             {/* success view*/}
             {success ? (
               <div className="flex flex-col items-center text-center py-4 animate-fade-in">
-                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-5 border-4 border-white shadow-sm">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-5 border-4 border-white">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                     <path d="M20 6L9 17l-5-5" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-buap-900 tracking-tight">¡Registro exitoso!</h2>
-                <p className="text-sm text-slate-500 mt-2 mb-8 leading-relaxed">
-                  Tu cuenta como <span className="font-semibold text-slate-700">Visualizador</span> ha sido creada. Ahora puedes acceder al sistema Kanan.
+                <h2 className="text-xl font-semibold uppercase tracking-wide text-black">¡Registro exitoso!</h2>
+                <p className="text-sm text-black/70 mt-2 mb-8 leading-relaxed">
+                  Tu cuenta como <span className="font-semibold text-black">Visualizador</span> ha sido creada. Ahora puedes acceder al sistema Kanan.
                 </p>
                 <button
                   onClick={() => onRegister(null, userData)}
-                  className="btn-primary w-full justify-center h-11"
+                  className="h-11 w-full flex items-center justify-center gap-2 bg-kanan-700 hover:bg-kanan-800 text-white font-medium text-[15px] transition-colors"
                 >
                   Entrar al sistema
                 </button>
@@ -162,9 +155,9 @@ export default function Register({ onRegister, onGoLogin }) {
             ) : (
               /* form view */
               <>
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-buap-900 tracking-tight">Crear cuenta</h2>
-                  <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
+                <div className="mb-6 pb-5 border-b border-black/15">
+                  <h2 className="text-xl font-semibold uppercase tracking-wide text-black">Crear cuenta</h2>
+                  <p className="text-sm text-black/70 mt-1.5 leading-relaxed">
                     Completa el formulario para registrarte en el sistema.
                   </p>
                 </div>
@@ -173,9 +166,9 @@ export default function Register({ onRegister, onGoLogin }) {
 
                   {/* useer name */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="label-sm" htmlFor="nombre-input">Nombre de usuario</label>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-black/60" htmlFor="nombre-input">Nombre de usuario</label>
                     <div className="relative flex items-center">
-                      <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                      <span className="absolute left-3.5 text-black/40 pointer-events-none">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                           <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
                           <path d="M2 13.5c0-2.5 2.69-4 6-4s6 1.5 6 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -187,7 +180,7 @@ export default function Register({ onRegister, onGoLogin }) {
                         value={form.nombreUsuario}
                         onChange={handleChange("nombreUsuario")}
                         placeholder="Juan Quintero"
-                        className={`input-base pl-10 ${fieldErrors.nombreUsuario ? "border-red-400 focus:border-red-500 focus:ring-red-100" : ""}`}
+                        className={`w-full h-11 pl-10 pr-4 bg-white border text-sm text-black placeholder:text-black/35 outline-none transition-colors duration-150 ${fieldErrors.nombreUsuario ? "border-red-400 focus:border-red-500" : "border-black/20 focus:border-kanan-700"}`}
                         autoComplete="username"
                         autoFocus
                       />
@@ -199,9 +192,9 @@ export default function Register({ onRegister, onGoLogin }) {
 
                   {/* emaiil */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="label-sm" htmlFor="email-input">Correo electrónico</label>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-black/60" htmlFor="email-input">Correo electrónico</label>
                     <div className="relative flex items-center">
-                      <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                      <span className="absolute left-3.5 text-black/40 pointer-events-none">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                           <rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
                           <path d="M2 5.5l6 4 6-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -212,8 +205,8 @@ export default function Register({ onRegister, onGoLogin }) {
                         type="email"
                         value={form.email}
                         onChange={handleChange("email")}
-                        placeholder="correo@ejemplo.com"
-                        className={`input-base pl-10 ${fieldErrors.email ? "border-red-400 focus:border-red-500 focus:ring-red-100" : ""}`}
+                        placeholder="ejemplo@alumno.buap.mx"
+                        className={`w-full h-11 pl-10 pr-4 bg-white border text-sm text-black placeholder:text-black/35 outline-none transition-colors duration-150 ${fieldErrors.email ? "border-red-400 focus:border-red-500" : "border-black/20 focus:border-kanan-700"}`}
                         autoComplete="email"
                       />
                     </div>
@@ -224,9 +217,9 @@ export default function Register({ onRegister, onGoLogin }) {
 
                   {/* passweord */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="label-sm" htmlFor="reg-password-input">Contraseña</label>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-black/60" htmlFor="reg-password-input">Contraseña</label>
                     <div className="relative flex items-center">
-                      <span className="absolute left-3.5 text-slate-400 pointer-events-none">
+                      <span className="absolute left-3.5 text-black/40 pointer-events-none">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                           <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.3" />
                           <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -239,13 +232,13 @@ export default function Register({ onRegister, onGoLogin }) {
                         value={form.password}
                         onChange={handleChange("password")}
                         placeholder="Mín. 8 caracteres"
-                        className={`input-base pl-10 pr-11 ${fieldErrors.password ? "border-red-400 focus:border-red-500 focus:ring-red-100" : ""}`}
+                        className={`w-full h-11 pl-10 pr-11 bg-white border text-sm text-black placeholder:text-black/35 outline-none transition-colors duration-150 ${fieldErrors.password ? "border-red-400 focus:border-red-500" : "border-black/20 focus:border-kanan-700"}`}
                         autoComplete="new-password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPass((v) => !v)}
-                        className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded"
+                        className="absolute right-3 text-black/40 hover:text-black/70 transition-colors p-0.5"
                         tabIndex={-1}
                       >
                         {showPass ? (
@@ -267,24 +260,54 @@ export default function Register({ onRegister, onGoLogin }) {
                     )}
                   </div>
 
-                  {/* account type */}
-                  <div className="flex items-center gap-2.5 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl mt-1">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-slate-400 flex-shrink-0">
-                      <circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
-                      <path d="M1.5 12c0-2.5 2.46-4 5.5-4s5.5 1.5 5.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                    </svg>
-                    <div className="flex-1">
-                      <p className="text-xs font-semibold text-slate-700">Cuenta Visualizador</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Acceso de solo lectura a telemetría y mapas.</p>
+                  {/* confirm password */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-black/60" htmlFor="reg-confirm-password-input">Confirmar contraseña</label>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3.5 text-black/40 pointer-events-none">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                          <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                          <circle cx="8" cy="11" r="1.2" fill="currentColor" />
+                        </svg>
+                      </span>
+                      <input
+                        id="reg-confirm-password-input"
+                        type={showPass ? "text" : "password"}
+                        value={form.confirmPassword}
+                        onChange={handleChange("confirmPassword")}
+                        placeholder="Repite la contraseña"
+                        className={`w-full h-11 pl-10 pr-11 bg-white border text-sm text-black placeholder:text-black/35 outline-none transition-colors duration-150 ${fieldErrors.confirmPassword ? "border-red-400 focus:border-red-500" : "border-black/20 focus:border-kanan-700"}`}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPass((v) => !v)}
+                        className="absolute right-3 text-black/40 hover:text-black/70 transition-colors p-0.5"
+                        tabIndex={-1}
+                      >
+                        {showPass ? (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
+                            <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+                            <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.3" />
+                            <circle cx="8" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
-                    <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500">
-                      Visualizador
-                    </span>
+                    {fieldErrors.confirmPassword && (
+                      <p className="text-[10px] text-red-500 font-medium px-1">{fieldErrors.confirmPassword}</p>
+                    )}
                   </div>
 
                   {/* server glbal erro */}
                   {error && (
-                    <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium animate-shake">
+                    <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 text-xs text-red-600 font-medium animate-shake">
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                         <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
                         <line x1="7" y1="4" x2="7" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -297,7 +320,7 @@ export default function Register({ onRegister, onGoLogin }) {
                   <button
                     type="submit"
                     disabled={!canSubmit}
-                    className="btn-primary h-11 justify-center mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="h-11 w-full flex items-center justify-center gap-2 mt-1 bg-kanan-700 hover:bg-kanan-800 text-white font-medium text-[15px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin-slow" />
@@ -313,15 +336,15 @@ export default function Register({ onRegister, onGoLogin }) {
                 </form>
               </>
             )}
-          </div>
+          </BlueprintCard>
 
           {/* Back to login - Solo visible si no estamos en la pantalla de éxito */}
           {!success && (
-            <p className="text-center text-sm text-slate-500 mt-5">
+            <p className="text-center text-sm text-black/80 mt-5">
               ¿Ya tienes cuenta?{" "}
               <button
                 onClick={onGoLogin}
-                className="text-buap-700 font-semibold hover:underline"
+                className="text-kanan-700 font-semibold hover:text-kanan-800 hover:underline"
               >
                 Inicia sesión
               </button>
