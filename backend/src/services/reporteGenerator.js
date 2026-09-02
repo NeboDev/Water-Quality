@@ -2,11 +2,93 @@ const PDFDocument = require("pdfkit");
 const mongoose = require("mongoose");
 const { pool } = require("../config/postgres");
 
-const BLUE_DARK = "#1F4E79";
-const BLUE_MID = "#2E75B6";
-const GRAY = "#666666";
-const RED = "#C00000";
-const GREEN = "#375623";
+// México (todo el país, salvo franja fronteriza) opera en UTC-6 fijo
+// desde que se eliminó el horario de verano en 2022 — por eso es seguro
+// hardcodear el offset en vez de calcularlo dinámicamente.
+const TZ_OFFSET_MX = "-06:00";
+
+// Convierte una fecha "YYYY-MM-DD" (o un Date/ISO ya completo) al
+// INICIO del día en hora de México, como objeto Date en UTC real.
+// Sin esto, new Date("2026-09-02") se interpreta como medianoche UTC,
+// que en México ya son las 6pm del día ANTERIOR.
+function inicioDelDiaMX(fecha) {
+  const soloFecha = String(fecha).slice(0, 10); // tolera "2026-09-02" o "2026-09-02T10:00:00Z"
+  return new Date(`${soloFecha}T00:00:00.000${TZ_OFFSET_MX}`);
+}
+
+// Igual pero para el FINAL del día (23:59:59.999 hora México)
+function finDelDiaMX(fecha) {
+  const soloFecha = String(fecha).slice(0, 10);
+  return new Date(`${soloFecha}T23:59:59.999${TZ_OFFSET_MX}`);
+}
+
+// Sistema de color del reporte PDF (estética "blueprint" del dashboard).
+// Cada escala va de 100 (más claro, uso como fondo) a 900 (más oscuro,
+// uso como texto sobre blanco). Fuente única de verdad: no debe haber
+// hexadecimales sueltos fuera de este objeto en el resto del archivo.
+const PALETA = {
+  // Marca Kanan — encabezados, títulos de sección, líneas de marca.
+  kanan: {
+    100: "#eaf6ff",
+    200: "#cfeaff",
+    300: "#9fd9ff",
+    400: "#38b6ff",
+    500: "#1a94e0",
+    600: "#0f6fc4",
+    700: "#004aad",
+    800: "#003a87",
+    900: "#002a62",
+  },
+  // Grises neutros (con leve tinte azulado) — texto secundario, líneas
+  // divisorias y estados sin datos/sin configurar.
+  neutral: {
+    100: "#f2f4f7",
+    200: "#e2e6ec",
+    300: "#c8cfd9",
+    400: "#9aa5b3",
+    500: "#78838f",
+    600: "#5c6570",
+    700: "#444b54",
+    800: "#2f343a",
+    900: "#1c1f23",
+  },
+  // Cumplimiento NOM-127 / lecturas dentro de rango.
+  exito: {
+    100: "#eaf7ee",
+    200: "#c9ecd3",
+    300: "#97d9a9",
+    400: "#4fb96c",
+    500: "#2f9c50",
+    600: "#1f7f3d",
+    700: "#14652f",
+    800: "#0f4e24",
+    900: "#0a3a1a",
+  },
+  // No cumplimiento / lecturas fuera de rango.
+  peligro: {
+    100: "#fceaea",
+    200: "#f7cccc",
+    300: "#ec9999",
+    400: "#dd5c5c",
+    500: "#cc3333",
+    600: "#b31f1f",
+    700: "#941414",
+    800: "#700f0f",
+    900: "#4d0a0a",
+  },
+  // Alertas pendientes de resolución / datos parciales.
+  advertencia: {
+    100: "#fdf3e0",
+    200: "#fae4b8",
+    300: "#f5c876",
+    400: "#eba83c",
+    500: "#d4880f",
+    600: "#b06e0a",
+    700: "#8a5608",
+    800: "#6b4206",
+    900: "#4a2d04",
+  },
+};
 
 const Muestra =
   mongoose.models.Muestra ||
@@ -159,19 +241,19 @@ async function generarReporte({
     // Encabezado
     doc
       .fontSize(18)
-      .fillColor(BLUE_DARK)
+      .fillColor(PALETA.kanan[800])
       .font("Helvetica-Bold")
       .text("KANAN", 50, 50, { align: "center" });
 
     doc
       .fontSize(11)
-      .fillColor(BLUE_MID)
+      .fillColor(PALETA.kanan[600])
       .font("Helvetica")
       .text("Sistema de Monitoreo de Calidad del Agua", { align: "center" });
 
     doc
       .fontSize(9)
-      .fillColor(GRAY)
+      .fillColor(PALETA.neutral[600])
       .text("Benemérita Universidad Autónoma de Puebla — ICUAP", {
         align: "center",
       });
@@ -180,7 +262,7 @@ async function generarReporte({
     doc
       .moveTo(50, doc.y)
       .lineTo(doc.page.width - 50, doc.y)
-      .strokeColor(BLUE_MID)
+      .strokeColor(PALETA.kanan[600])
       .lineWidth(1.5)
       .stroke();
     doc.moveDown(0.5);
@@ -188,13 +270,13 @@ async function generarReporte({
     // Titulo del reporte
     doc
       .fontSize(14)
-      .fillColor(BLUE_DARK)
+      .fillColor(PALETA.kanan[800])
       .font("Helvetica-Bold")
       .text("Reporte de Cumplimiento NOM-127-SSA1-2021", { align: "center" });
     doc.moveDown(0.3);
 
     // Badge de cumplimiento
-    const badgeColor = cumpleGeneral ? GREEN : RED;
+    const badgeColor = cumpleGeneral ? PALETA.exito[700] : PALETA.peligro[700];
     const badgeText = cumpleGeneral
       ? "✓ CUMPLE NOM-127"
       : "✗ NO CUMPLE NOM-127";
@@ -209,13 +291,13 @@ async function generarReporte({
     doc
       .moveTo(50, doc.y)
       .lineTo(doc.page.width - 50, doc.y)
-      .strokeColor("#CCCCCC")
+      .strokeColor(PALETA.neutral[300])
       .lineWidth(0.5)
       .stroke();
     doc.moveDown(0.4);
 
     const infoY = doc.y;
-    doc.fontSize(9).fillColor(GRAY).font("Helvetica");
+    doc.fontSize(9).fillColor(PALETA.neutral[600]).font("Helvetica");
 
     const col1 = 50;
     const col2 = 310;
@@ -262,7 +344,7 @@ async function generarReporte({
     doc
       .moveTo(50, doc.y)
       .lineTo(doc.page.width - 50, doc.y)
-      .strokeColor("#CCCCCC")
+      .strokeColor(PALETA.neutral[300])
       .lineWidth(0.5)
       .stroke();
     doc.moveDown(0.6);
@@ -270,7 +352,7 @@ async function generarReporte({
     // Tabla de estadisticas por parametro
     doc
       .fontSize(11)
-      .fillColor(BLUE_DARK)
+      .fillColor(PALETA.kanan[800])
       .font("Helvetica-Bold")
       .text("Resumen estadístico por parámetro");
     doc.moveDown(0.4);
@@ -289,7 +371,7 @@ async function generarReporte({
     ];
 
     const tableHeaderY = doc.y;
-    doc.rect(50, tableHeaderY, pageWidth, 18).fill(BLUE_DARK);
+    doc.rect(50, tableHeaderY, pageWidth, 18).fill(PALETA.kanan[800]);
 
     doc.fontSize(8).fillColor("white").font("Helvetica-Bold");
     headers.forEach((h, i) => {
@@ -314,11 +396,11 @@ async function generarReporte({
       const est = estadisticas[param];
       const limite = limitesPorNodo[param];
       const unidad = UNIDADES_PARAMETRO[param];
-      const bgColor = idx % 2 === 0 ? "#F5F5F5" : "#FFFFFF";
+      const bgColor = idx % 2 === 0 ? PALETA.neutral[100] : "#FFFFFF";
 
       doc.rect(50, rowY, pageWidth, 16).fill(bgColor);
 
-      doc.fontSize(8).fillColor("#333333").font("Helvetica");
+      doc.fontSize(8).fillColor(PALETA.neutral[700]).font("Helvetica");
 
       if (est && est.sinUmbralConfigurado) {
         doc.text(
@@ -340,12 +422,12 @@ async function generarReporte({
           align: "center",
         });
         doc
-          .fillColor(GRAY)
+          .fillColor(PALETA.neutral[600])
           .text("Sin umbral configurado", colX[4] + 2, rowY + 4, {
             width: colWidths[4] + colWidths[5] - 4,
           });
       } else if (est) {
-        const cumpleColor = est.cumple ? GREEN : RED;
+        const cumpleColor = est.cumple ? PALETA.exito[700] : PALETA.peligro[700];
         const cumpleText = est.cumple ? "✓ Sí" : `✗ No (${est.fueraDeRango})`;
 
         doc.text(
@@ -386,7 +468,7 @@ async function generarReporte({
           width: colWidths[0] - 4,
         });
         doc
-          .fillColor(GRAY)
+          .fillColor(PALETA.neutral[600])
           .text("Sin datos", colX[1] + 2, rowY + 4, { width: 300 });
       }
 
@@ -400,7 +482,7 @@ async function generarReporte({
     if (muestras.length > 0) {
       doc
         .fontSize(11)
-        .fillColor(BLUE_DARK)
+        .fillColor(PALETA.kanan[800])
         .font("Helvetica-Bold")
         .text("Detalle de muestras registradas");
       doc.moveDown(0.4);
@@ -417,7 +499,7 @@ async function generarReporte({
       ];
 
       const mHeaderY = doc.y;
-      doc.rect(50, mHeaderY, pageWidth, 16).fill(BLUE_MID);
+      doc.rect(50, mHeaderY, pageWidth, 16).fill(PALETA.kanan[600]);
       doc.fontSize(7.5).fillColor("white").font("Helvetica-Bold");
       mHeaders.forEach((h, i) => {
         doc.text(h, mColX[i] + 2, mHeaderY + 4, {
@@ -435,9 +517,9 @@ async function generarReporte({
           mRowY = 50;
         }
 
-        const bgColor = idx % 2 === 0 ? "#F5F5F5" : "#FFFFFF";
+        const bgColor = idx % 2 === 0 ? PALETA.neutral[100] : "#FFFFFF";
         doc.rect(50, mRowY, pageWidth, 14).fill(bgColor);
-        doc.fontSize(7).fillColor("#333333").font("Helvetica");
+        doc.fontSize(7).fillColor(PALETA.neutral[700]).font("Helvetica");
 
         const ts = new Date(m.timestamp).toLocaleString("es-MX", {
           timeZone: "America/Mexico_City",
@@ -483,7 +565,7 @@ async function generarReporte({
 
       doc
         .fontSize(11)
-        .fillColor(BLUE_DARK)
+        .fillColor(PALETA.kanan[800])
         .font("Helvetica-Bold")
         .text("Alertas registradas en el período");
       doc.moveDown(0.4);
@@ -500,7 +582,7 @@ async function generarReporte({
       ];
 
       const aHeaderY = doc.y;
-      doc.rect(50, aHeaderY, pageWidth, 16).fill(RED);
+      doc.rect(50, aHeaderY, pageWidth, 16).fill(PALETA.peligro[700]);
       doc.fontSize(7.5).fillColor("white").font("Helvetica-Bold");
       aHeaders.forEach((h, i) => {
         doc.text(h, aColX[i] + 2, aHeaderY + 4, {
@@ -517,9 +599,9 @@ async function generarReporte({
           aRowY = 50;
         }
 
-        const bgColor = idx % 2 === 0 ? "#FFF0F0" : "#FFFFFF";
+        const bgColor = idx % 2 === 0 ? PALETA.peligro[100] : "#FFFFFF";
         doc.rect(50, aRowY, pageWidth, 14).fill(bgColor);
-        doc.fontSize(7).fillColor("#333333").font("Helvetica");
+        doc.fontSize(7).fillColor(PALETA.neutral[700]).font("Helvetica");
 
         const ts = new Date(a.creado_en).toLocaleString("es-MX", {
           timeZone: "America/Mexico_City",
@@ -540,13 +622,15 @@ async function generarReporte({
           align: "center",
         });
         doc
-          .fillColor(a.resuelta ? GREEN : RED)
+          .fillColor(a.resuelta ? PALETA.exito[700] : PALETA.peligro[700])
           .text(resuelta, aColX[4] + 2, aRowY + 3, {
             width: aColWidths[4] - 4,
             align: "center",
           });
+        // Alerta ya resuelta: se confirma el incumplimiento histórico.
+        // Alerta pendiente: se marca como advertencia, no como falla resuelta.
         doc
-          .fillColor(RED)
+          .fillColor(a.resuelta ? PALETA.peligro[700] : PALETA.advertencia[700])
           .font("Helvetica-Bold")
           .text("FUERA DE NORMA", aColX[5] + 2, aRowY + 3, {
             width: aColWidths[5] - 4,
@@ -566,14 +650,14 @@ async function generarReporte({
     doc
       .moveTo(50, doc.y)
       .lineTo(doc.page.width - 50, doc.y)
-      .strokeColor("#CCCCCC")
+      .strokeColor(PALETA.neutral[300])
       .lineWidth(0.5)
       .stroke();
     doc.moveDown(0.4);
 
     doc
       .fontSize(8)
-      .fillColor(GRAY)
+      .fillColor(PALETA.neutral[600])
       .font("Helvetica")
       .text(
         "Este reporte fue generado automáticamente por el sistema Kanan. " +
@@ -586,4 +670,4 @@ async function generarReporte({
   });
 }
 
-module.exports = { generarReporte };
+module.exports = { generarReporte, inicioDelDiaMX, finDelDiaMX };

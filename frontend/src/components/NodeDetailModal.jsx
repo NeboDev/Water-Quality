@@ -64,7 +64,7 @@ const CustomTooltip = ({ active, payload, unit }) => {
   );
 };
 
-export default function NodeDetailModal({ node, onClose, canRecordSamples, onRegisterSample }) {
+export default function NodeDetailModal({ node, onClose, canRecordSamples, onRegisterSample, muestraVersion = 0 }) {
   // Recalcula "en línea" → "sin señal" por vencimiento mientras el modal sigue abierto
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -175,6 +175,17 @@ export default function NodeDetailModal({ node, onClose, canRecordSamples, onReg
       return { ...b, lecturas: { ...b.lecturas, data: [nuevaLectura, ...b.lecturas.data].slice(0, 20) } };
     });
   }, [node.timestamp, node.valores]);
+
+  // Al registrar una muestra desde el botón "Registrar muestra" (modal hermano montado
+  // por App.jsx), el bloque "muestras" quedaba con la caché vieja porque nada lo invalidaba.
+  const prevMuestraVersion = useRef(muestraVersion);
+  useEffect(() => {
+    if (muestraVersion === prevMuestraVersion.current) return;
+    prevMuestraVersion.current = muestraVersion;
+    setBlocks((b) => ({ ...b, muestras: { data: null, loading: false, error: "" } }));
+    if (historyTab === "muestras") loadBlock("muestras");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [muestraVersion]);
 
   const currentBlock = blocks[historyTab];
 

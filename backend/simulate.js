@@ -16,14 +16,14 @@ function normalizarMac(mac) {
   return mac.replace(/[:\-]/g, "").toUpperCase();
 }
 
-const MAC = normalizarMac(process.argv[2] || "AA:BB:CC:DD:EE:91");
+const MAC = normalizarMac(process.argv[2] || "AA:BB:CC:DD:EE:93");
 const INTERVALO = parseInt(process.argv[3]) || 8000; // default 8s -> ~7.5 msj/min, bajo el rate limit de 10/60s
 
 const client = mqtt.connect(
   process.env.MQTT_BROKER || "mqtt://localhost:1883",
   {
-    username: "AABBCCDDEE91",
-    password: "W5tNwz1qkyRpvKY4oI5m",
+    username: "AABBCCDDEE93",
+    password: "cUHfklA3xNIDALgUtch5",
     clientId: "simulador_" + Math.random().toString(16).substr(2, 8),
   },
 );

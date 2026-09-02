@@ -91,6 +91,8 @@ export default function App() {
   const [showUsuarioForm, setShowUsuarioForm] = useState(false);
   const [showNodoConfig, setShowNodoConfig] = useState(false);
   const [showMuestraModal, setShowMuestraModal] = useState(null);
+  // Incrementa al registrar una muestra — NodeDetailModal lo usa para invalidar su caché de "Muestras oficiales"
+  const [muestraVersion, setMuestraVersion] = useState(0);
 
   // Global Alerts
   const [globalAlerts, setGlobalAlerts] = useState([]);
@@ -194,7 +196,8 @@ export default function App() {
   useEffect(() => {
     if (!auth?.user) return;
 
-    socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3000");
+    // Sin VITE_SOCKET_URL, socket.io-client conecta al mismo origen que sirvió la página (pasa por el proxy de nginx)
+    socket = io(import.meta.env.VITE_SOCKET_URL || undefined);
 
     // Estado real de la conexión — refleja el indicador del Header
     setSocketConnected(socket.connected);
@@ -535,6 +538,7 @@ export default function App() {
           onClose={closeNodeModal}
           canRecordSamples={permissions.canRecordSamples}
           onRegisterSample={(node) => setShowMuestraModal(node)}
+          muestraVersion={muestraVersion}
         />
       )}
 
@@ -646,7 +650,10 @@ export default function App() {
         <MuestraModal
           node={showMuestraModal}
           onClose={() => setShowMuestraModal(null)}
-          onSuccess={() => setShowMuestraModal(null)}
+          onSuccess={() => {
+            setShowMuestraModal(null);
+            setMuestraVersion((v) => v + 1);
+          }}
         />
       )}
 

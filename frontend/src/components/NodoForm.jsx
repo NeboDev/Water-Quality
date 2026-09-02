@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { registrarNodo, editarUmbralesDeNodo } from "../api";
+import { registrarNodo, editarUmbralesDeNodo, generarCredencialesMqtt } from "../api";
 import Modal from "./common/Modal";
 import InputField from "./common/InputField";
 import Alert from "./common/Alert";
 import SuccessState from "./common/SuccessState";
+import MqttCredentialsModal from "./common/MqttCredentialsModal";
 
 // validaciones del lado del cliente
 const MAC_REGEX = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
@@ -24,6 +25,12 @@ export default function NodoForm({ onSuccess, onClose }) {
   const [successData, setSuccessData] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [umbralesForm, setUmbralesForm] = useState(DEFAULTS);
+
+  // Nodo ya creado en el backend, pendiente de credenciales MQTT y/o de cerrar el flujo
+  const [nodoCreado, setNodoCreado] = useState(null);
+  const [mqttCreds, setMqttCreds] = useState(null); // { username, password, mensaje }
+  const [credencialesError, setCredencialesError] = useState("");
+  const [retrying, setRetrying] = useState(false);
 
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -64,11 +71,17 @@ export default function NodoForm({ onSuccess, onClose }) {
         ...(form.version_fw.trim() && { version_fw: form.version_fw.trim() }),
       };
       const data = await registrarNodo(payload);
-      
+
       // Guardar umbrales individuales en el nuevo nodo
       await editarUmbralesDeNodo(data.nodo.id, umbralesForm);
 
-      setSuccessData(data.nodo);
+      setNodoCreado(data.nodo);
+      if (data.mqtt) {
+        setMqttCreds(data.mqtt);
+      } else {
+        // El nodo sí quedó creado — solo faltó generar sus credenciales MQTT
+        setCredencialesError(data.credenciales_error || "No se pudieron generar las credenciales MQTT.");
+      }
     } catch (err) {
       setServerError(err.message || "Error al registrar el nodo.");
     } finally {
@@ -76,7 +89,27 @@ export default function NodoForm({ onSuccess, onClose }) {
     }
   };
 
+  const handleReintentarCredenciales = async () => {
+    if (!nodoCreado) return;
+    setRetrying(true);
+    try {
+      const data = await generarCredencialesMqtt(nodoCreado.id);
+      setCredencialesError("");
+      setMqttCreds(data.mqtt);
+    } catch (err) {
+      setCredencialesError(err.message || "No se pudieron generar las credenciales MQTT.");
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  const handleCloseMqttModal = () => {
+    setMqttCreds(null); // limpiar la contraseña del estado — no se vuelve a mostrar
+    setSuccessData(nodoCreado);
+  };
+
   return (
+    <>
     <Modal
       onClose={onClose}
       title="Registrar nuevo nodo"
@@ -92,6 +125,39 @@ export default function NodoForm({ onSuccess, onClose }) {
           }
           onConfirm={() => onSuccess(successData)}
         />
+      ) : credencialesError ? (
+        <div className="px-6 py-8 flex flex-col items-center text-center gap-4 animate-fade-in">
+          <div className="w-14 h-14 bg-status-warn/10 text-status-warn flex items-center justify-center">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M12 8v4M12 16h.01M10.29 3.86l-8.18 14.18A2 2 0 004 21h16a2 2 0 001.89-2.96L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 mb-1">El nodo se registró, pero faltó un paso</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              El nodo <span className="font-mono text-slate-700">{nodoCreado?.mac}</span> ya está creado. No se pudieron generar sus credenciales MQTT: <span className="text-status-alert">{credencialesError}</span>
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 w-full mt-2">
+            <button
+              onClick={handleReintentarCredenciales}
+              disabled={retrying}
+              className="btn-primary w-full justify-center"
+            >
+              {retrying ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin-slow" />
+              ) : (
+                "Reintentar"
+              )}
+            </button>
+            <button
+              onClick={() => setSuccessData(nodoCreado)}
+              className="btn-ghost w-full justify-center text-xs"
+            >
+              Continuar sin credenciales por ahora
+            </button>
+          </div>
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* MAC */}
@@ -259,5 +325,16 @@ export default function NodoForm({ onSuccess, onClose }) {
         </form>
       )}
     </Modal>
+
+    {/* Pantalla de credenciales MQTT — overlay propio, cierre explícito (no backdrop/X) */}
+    {mqttCreds && (
+      <MqttCredentialsModal
+        username={mqttCreds.username}
+        password={mqttCreds.password}
+        message={mqttCreds.mensaje}
+        onClose={handleCloseMqttModal}
+      />
+    )}
+    </>
   );
 }

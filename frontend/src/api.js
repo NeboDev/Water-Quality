@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   // URL base del backend obtenida de variables de entorno con fallback a localhost
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   withCredentials: true,
 });
 
@@ -75,6 +75,13 @@ export async function editarNodo(id, campos) {
 
 export async function eliminarNodo(id) {
   const { data } = await api.delete(`/nodos/${id}`);
+  return data;
+}
+
+// La contraseña en texto plano solo viene en esta respuesta puntual — no se persiste
+// en la base de datos, así que no existe ningún GET que vuelva a devolverla.
+export async function generarCredencialesMqtt(nodoId) {
+  const { data } = await api.post(`/nodos/${nodoId}/credenciales-mqtt`);
   return data;
 }
 

@@ -27,6 +27,9 @@ const server = http.createServer(app);
 // cualquier origen ('*') mientras el REST ya estaba restringido, dejando
 // abierta la conexión WebSocket (telemetria:live, alertas:nueva, etc.)
 // a cualquier sitio que quisiera conectarse
+// TODO: agregar el dominio final de producción del VPS cuando esté definido.
+// Con rutas relativas (mismo origen vía proxy de nginx) esta whitelist no aplica
+// al flujo del frontend, pero sí sigue filtrando clientes externos directos a la API.
 const CORS_ORIGINS = ["http://localhost:5173", "http://localhost:3001"];
 
 //  WebSocket montado sobre el mismo servidor HTTP
